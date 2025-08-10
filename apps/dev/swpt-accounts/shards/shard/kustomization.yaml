@@ -130,11 +130,15 @@ configMapGenerator:
 # but to have high-availability, should be at least 2.
 #
 replicas:
+- name: tasks-processor
+  count: 0
 - name: web-server
   count: 0
 - name: messages-flusher
   count: 0
 - name: messages-consumer
+  count: 0
+- name: messages-drainer
   count: 1
 - name: chores-consumer
   count: 0
