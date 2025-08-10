@@ -30,7 +30,7 @@ spec:
       containers:
         - name: messages-drainer
           image: swpt-accounts
-          args: ['consume_messages']
+          args: ['consume_messages', '--draining-mode']
           securityContext:
             allowPrivilegeEscalation: false
             capabilities:
