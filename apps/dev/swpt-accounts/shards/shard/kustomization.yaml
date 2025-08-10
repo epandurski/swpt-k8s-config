@@ -131,15 +131,15 @@ configMapGenerator:
 #
 replicas:
 - name: web-server
-  count: 1
+  count: 0
 - name: messages-flusher
-  count: 1
+  count: 0
 - name: messages-consumer
   count: 1
 - name: chores-consumer
-  count: 1
+  count: 0
 - name: http-cache
-  count: 1
+  count: 0
 
 secretGenerator:
 - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
