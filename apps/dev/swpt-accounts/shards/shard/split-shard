@@ -1,0 +1,161 @@
+#!/bin/bash
+set -euo pipefail
+IFS=$'\n\t'
+
+if [[ "$#" != 0 ]]; then
+    echo 'Splits the shard into two children shards.'
+    echo
+    echo 'Usage: split-shard'
+    exit 2
+fi
+
+for dependency in sed kustomize yq envsubst
+do
+    if ! which "$dependency" &> /dev/null; then
+        echo
+        echo "ERROR: $dependency is not installed on your system."
+        echo
+        exit 2
+    fi
+done
+
+function find_script_dir {
+    SOURCE=${BASH_SOURCE[0]}
+    while [ -L "$SOURCE" ]; do # resolve $SOURCE until the file is not a symlink
+        DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+        SOURCE=$(readlink "$SOURCE")
+        # If $SOURCE was a relative symlink, we need to resolve it relative
+        # to the path where the symlink file was located.
+        [[ $SOURCE != /* ]] && SOURCE=$DIR/$SOURCE
+    done
+    DIR=$( cd -P "$( dirname "$SOURCE" )" >/dev/null 2>&1 && pwd )
+    export SWPT_SHARD_DIR="$DIR"
+}
+
+function yq_ensure {
+    result=$(yq "... comments=\"\" | $2" "$1")
+    if [[ "$result" != "$3" ]]; then
+        echo "ERROR: Unexpected value for '$2' in $1."
+        echo
+        echo "Expected '$3', got '$result'."
+        exit 1
+    fi
+}
+
+function validate_shard_kustomization_file {
+    fname="$DIR/kustomization.yaml"
+
+    # Ensure required fields are present.
+    yq_ensure "$fname" '.apiVersion' kustomize.config.k8s.io/v1beta1
+    yq_ensure "$fname" '.kind' Kustomization
+    yq_ensure "$fname" '.nameSuffix' "$SHARD_SUFFIX"
+    yq_ensure "$fname" '.labels | kind' seq
+    yq_ensure "$fname" '.configMapGenerator | kind' seq
+    yq_ensure "$fname" '.secretGenerator | kind' seq
+    yq_ensure "$fname" '.resources | kind' seq
+    yq_ensure "$fname" '.patches | kind' seq
+    yq_ensure "$fname" '.replacements | kind' seq
+
+    # Ensure common labels are correctly declared.
+    yq_ensure "$fname" '.labels | length' 1
+    yq_ensure "$fname" '.labels[0] | kind' map
+    yq_ensure "$fname" '.labels[0] | length' 2
+    yq_ensure "$fname" '.labels[0].includeSelectors' true
+    yq_ensure "$fname" '.labels[0].pairs | kind' map
+    yq_ensure "$fname" '.labels[0].pairs | length' 1
+    yq_ensure "$fname" '.labels[0].pairs."app.kubernetes.io/instance"' "$SHARD_BASENAME"
+
+    # Ensure "shardconfig" contains the correct routing key.
+    literals='.configMapGenerator[] | select(.name == "shardconfig") .literals'
+    varname='PROTOCOL_BROKER_QUEUE_ROUTING_KEY'
+    yq_ensure "$fname" "${literals} | kind" seq
+    yq_ensure "$fname" "${literals}[] | select(. == \"${varname}=*\")" "${varname}=${SHARD_ROUTING_KEY}"
+
+    # Ensure "http-cache-nginx-config" is correctly declared.
+    files='.configMapGenerator[] | select(.name == "http-cache-nginx-config") .files'
+    yq_ensure "$fname" "${files} | kind" seq
+    yq_ensure "$fname" "${files}[] | select(. == \"nginx.conf=*\") | kind" scalar
+    yq_ensure "$fname" "${files}[] | select(. == \"default.conf.template=*\") | kind" scalar
+
+    # Ensure Postgres secrets are correctly declared.
+    for db_user in postgres standby db-owner
+    do
+        config_name_suffix='cluster-name.credentials.postgresql.acid.zalan.do'
+        password_file='../../secrets/postgres-cluster-password.encrypted'
+        db_user_underscored="$(echo $db_user | sed 's/-/_/')"
+        yq_ensure "$fname"\
+                  ".secretGenerator[] | select(.name == \"${db_user}.${config_name_suffix}\" and .type == \"Opaque\" and .options.disableNameSuffixHash == true and .options.labels.application == \"spilo\" and .options.labels.team == \"swpt\" and .options.labels.cluster-name == \"cluster-name\" and .literals[0] == \"username=${db_user_underscored}\" and .files[0] == \"password=${password_file}\") | kind"\
+                  map
+    done
+
+    # Ensure needed resources are included.
+    yq_ensure "$fname" '.resources[] | select(. == "postgres-cluster.yaml") | kind' scalar
+    yq_ensure "$fname" '.resources[] | select(. == "../../../../base/swpt-accounts/shard/") | kind' scalar
+
+    # Ensure the "postgres-cluster" patch is applied.
+    patch_path='../../../../base/swpt-accounts/shard/patches/postgres-cluster.yaml'
+    yq_ensure "$fname"\
+              ".patches[] | select(.path == \"$patch_path\" and .target.group == \"acid.zalan.do\" and .target.kind == \"postgresql\" and .target.name == \"db\" and .target.version == \"v1\") | kind"\
+              map
+
+    # Ensure needed replacements are applied. It is impractical to
+    # individually check for each needed replacement here. Instead, we
+    # simply verify that there are enough of them (at least 10).
+    replacements_dir='../../../../base/swpt-accounts/shard/replacements/'
+    yq_ensure "$fname"\
+              "((.replacements[] | select(.path == \"${replacements_dir}*\")) as \$item ireduce(0; . + 1)) >= 10"\
+              true
+}
+
+function validate_shard_postgres_cluster {
+    fname="$DIR/postgres-cluster.yaml"
+
+    # Ensure required fields are present.
+    yq_ensure "$fname" '.apiVersion' acid.zalan.do/v1
+    yq_ensure "$fname" '.kind' postgresql
+    yq_ensure "$fname" '.metadata | kind' map
+    yq_ensure "$fname" '.metadata.name' db
+    yq_ensure "$fname" '.spec | kind' map
+    yq_ensure "$fname" '.spec | has("dockerImage")' true
+    yq_ensure "$fname" '.spec | has("numberOfInstances")' true
+    yq_ensure "$fname" '.spec.volume | kind' map
+    yq_ensure "$fname" '.spec.volume | has("size")' true
+    yq_ensure "$fname" '.spec.resources | kind' map
+    yq_ensure "$fname" '.spec.resources | length' 2
+    yq_ensure "$fname" '.spec.resources.requests | kind' map
+    yq_ensure "$fname" '.spec.resources.limits | kind' map
+    yq_ensure "$fname" '.spec.env | kind' seq
+    yq_ensure "$fname" '.spec.teamId' swpt
+    yq_ensure "$fname" '.spec.users | kind' map
+    yq_ensure "$fname" '.spec.users | length' 1
+    yq_ensure "$fname" '.spec.users.db_owner | kind' seq
+    yq_ensure "$fname" '.spec.users.db_owner | length' 0
+    yq_ensure "$fname" '.spec.databases | kind' map
+    yq_ensure "$fname" '.spec.databases | length' 1
+    yq_ensure "$fname" '.spec.databases.db' db_owner
+    yq_ensure "$fname" '.spec.postgresql | kind' map
+    yq_ensure "$fname" '.spec.postgresql | has("version")' true
+}
+
+function ensure_shard_kustomization_build {
+    if ! kustomize build --output=/dev/null --load-restrictor=LoadRestrictionsNone "$DIR"; then
+        echo
+        echo "ERROR: Can not build shard's resources from the shard's Kustomization file."
+        exit 1
+    fi
+}
+
+find_script_dir || exit 3
+export SHARD_BASENAME=$(basename "$DIR")
+export SHARD_SUFFIX=$(echo "$SHARD_BASENAME" | sed -nE 's/^.*(\-[01]+)$/\1/p')
+export SHARD_ROUTING_KEY=$(echo "$SHARD_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
+
+validate_shard_kustomization_file
+validate_shard_postgres_cluster
+ensure_shard_kustomization_build
+
+SHARDS_PREFIX=$(echo "$SHARD_BASENAME" | sed -nE "s/^(.*)${SHARD_SUFFIX}$/\1/p")
+SHARD0_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')0"
+SHARD1_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')1"
+SHARD0_ROUTING_KEY=$(echo "$SHARD0_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
+SHARD1_ROUTING_KEY=$(echo "$SHARD1_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
