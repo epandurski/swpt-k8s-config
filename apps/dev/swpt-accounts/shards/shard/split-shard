@@ -2,10 +2,11 @@
 set -euo pipefail
 IFS=$'\n\t'
 
-if [[ "$#" != 0 ]]; then
+if [[ "$#" != 0 && ${1:-} != "--validate-only" ]]; then
     echo 'Splits the shard into two children shards.'
     echo
     echo 'Usage: split-shard'
+    echo '       split-shard --validate-only'
     exit 2
 fi
 
@@ -50,7 +51,6 @@ function validate_shard_kustomization_file {
     echo '... Ensuring required fields are present.'
     yq_ensure "$fname" '.apiVersion' kustomize.config.k8s.io/v1beta1
     yq_ensure "$fname" '.kind' Kustomization
-    yq_ensure "$fname" '.nameSuffix' "$SHARD_SUFFIX"
     yq_ensure "$fname" '.labels | kind' seq
     yq_ensure "$fname" '.configMapGenerator | kind' seq
     yq_ensure "$fname" '.secretGenerator | kind' seq
@@ -58,6 +58,15 @@ function validate_shard_kustomization_file {
     yq_ensure "$fname" '.resources | kind' seq
     yq_ensure "$fname" '.patches | kind' seq
     yq_ensure "$fname" '.replacements | kind' seq
+
+    echo '... Ensuring no common namespace is declared.'
+    yq_ensure "$fname" '. | has("namespace")' false
+
+    echo '... Ensuring no namePrefix is declared.'
+    yq_ensure "$fname" '. | has("namePrefix")' false
+
+    echo '... Ensuring the correct nameSuffix is declared.'
+    yq_ensure "$fname" '.nameSuffix' "$SHARD_SUFFIX"
 
     echo '... Ensuring common labels are correctly declared.'
     yq_ensure "$fname" '.labels | length' 1
@@ -67,6 +76,9 @@ function validate_shard_kustomization_file {
     yq_ensure "$fname" '.labels[0].pairs | kind' map
     yq_ensure "$fname" '.labels[0].pairs | length' 1
     yq_ensure "$fname" '.labels[0].pairs."app.kubernetes.io/instance"' "$SHARD_BASENAME"
+
+    echo '... Ensuring base resources are included.'
+    yq_ensure "$fname" ".resources[] | select(. == \"${BASE_DIR}\")" "$BASE_DIR"
 
     echo "... Ensuring shard's configuration contains the correct routing key."
     literals='.configMapGenerator[] | select(.name == "shardconfig") .literals'
@@ -79,9 +91,6 @@ function validate_shard_kustomization_file {
     yq_ensure "$fname" "${files} | kind" seq
     yq_ensure "$fname" "${files}[] | select(. == \"nginx.conf=*\") | kind" scalar
     yq_ensure "$fname" "${files}[] | select(. == \"default.conf.template=*\") | kind" scalar
-
-    echo '... Ensuring base resources are included.'
-    yq_ensure "$fname" ".resources[] | select(. == \"${BASE_DIR}\")" "$BASE_DIR"
 
     echo '... Ensuring PostgreSQL secrets are correctly declared.'
     for db_user in postgres standby db-owner
@@ -119,7 +128,6 @@ function validate_shard_kustomization_file {
     yq_ensure "$fname"\
               ".replacements[] | select(.path == \"${replacements_dir}clone-clustername.yaml\" or .path == \"${replacements_dir}clone-timestamp.yaml\") | kind"\
               ""
-    echo
 }
 
 function validate_shard_postgres_cluster {
@@ -141,14 +149,18 @@ function validate_shard_postgres_cluster {
     echo '... Ensuring correct cluster name.'
     yq_ensure "$fname" '.metadata.name' db
 
+    echo '... Ensuring no "standby:" or "clone:" sections are declared.'
+    yq_ensure "$fname" '.spec | has("standby")' false
+    yq_ensure "$fname" '.spec | has("clone")' false
+
+    echo '... Ensuring an "env:" section is declared.'
+    yq_ensure "$fname" '.spec.env | kind' seq
+
     echo '... Ensuring resource requests and limits are declared.'
     yq_ensure "$fname" '.spec.resources | kind' map
     yq_ensure "$fname" '.spec.resources | length' 2
     yq_ensure "$fname" '.spec.resources.requests | kind' map
     yq_ensure "$fname" '.spec.resources.limits | kind' map
-
-    echo '... Ensuring an "env:" section is declared.'
-    yq_ensure "$fname" '.spec.env | kind' seq
 
     echo '... Ensuring a correct team ID is declared.'
     yq_ensure "$fname" '.spec.teamId' swpt
@@ -163,8 +175,6 @@ function validate_shard_postgres_cluster {
     yq_ensure "$fname" '.spec.databases | kind' map
     yq_ensure "$fname" '.spec.databases | length' 1
     yq_ensure "$fname" '.spec.databases.db' db_owner
-
-    echo
 }
 
 function ensure_successful_shard_kustomization_build {
@@ -173,6 +183,29 @@ function ensure_successful_shard_kustomization_build {
         echo "ERROR: Can not build shard's resources from the shard's Kustomization file."
         exit 1
     fi
+}
+
+function ensure_no_split_in_progress {
+    fname="$DIR/kustomization.unsplit"
+    echo "Checking $fname"
+    if [[ -e "$fname" ]]; then
+        echo
+        echo "ERROR: A split is already in progress for \"$SHARD_BASENAME\"."
+        exit 1
+    fi
+}
+
+function ensure_no_existing_children_shards {
+    for shard_suffix in "$SHARD0_SUFFIX" "$SHARD1_SUFFIX"
+    do
+        child_dir="$DIR/../$SHARDS_PREFIX$shard_suffix"
+        echo "Checking ${child_dir}"
+        if [[ -e "$child_dir" ]]; then
+            echo
+            echo "ERROR: A child-shard already exists: $SHARDS_PREFIX$shard_suffix"
+            exit 1
+        fi
+    done
 }
 
 find_script_dir || exit 3
@@ -190,3 +223,17 @@ export SHARD1_ROUTING_KEY=$(echo "$SHARD1_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#
 validate_shard_kustomization_file
 validate_shard_postgres_cluster
 ensure_successful_shard_kustomization_build
+ensure_no_existing_children_shards
+ensure_no_split_in_progress
+
+if [[ ${1:-} == "--validate-only" ]]; then
+    echo
+    echo "\"$SHARD_BASENAME\" is valid and can be split."
+    exit 0
+fi
+
+echo
+echo "Splitting \"$SHARD_BASENAME\":"
+
+echo "... Creating $DIR/kustomization.unsplit"
+cp "$DIR/kustomization.yaml" "$DIR/kustomization.unsplit"
