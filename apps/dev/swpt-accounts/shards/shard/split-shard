@@ -128,6 +128,17 @@ function validate_shard_kustomization_file {
     yq_ensure "$fname"\
               ".replacements[] | select(.path == \"${replacements_dir}clone-clustername.yaml\" or .path == \"${replacements_dir}clone-timestamp.yaml\") | kind"\
               ""
+
+    echo '... Ensuring the number replicas is declared for each deployment.'
+    for replica_name in \
+            web-server\
+            messages-flusher\
+            messages-consumer\
+            chores-consumer\
+            http-cache
+    do
+        yq_ensure "$fname" ".replicas[] | select(.name == \"${replica_name}\") | has(\"count\")" true
+    done
 }
 
 function validate_shard_postgres_cluster {
@@ -237,3 +248,13 @@ echo "Splitting \"$SHARD_BASENAME\":"
 
 echo "... Creating $DIR/kustomization.unsplit"
 cp "$DIR/kustomization.yaml" "$DIR/kustomization.unsplit"
+
+for shard_suffix in "$SHARD0_SUFFIX" "$SHARD1_SUFFIX"
+do
+    shard_name=$SHARDS_PREFIX$shard_suffix
+    child_dir="$DIR/../$shard_name"
+    echo "... Creating ${child_dir}/"
+    cp -r "$DIR" "${child_dir}"
+    rm "${child_dir}/kustomization.unsplit"
+    yq -i '.replicas[] |= (.count = 0)' "${child_dir}/kustomization.yaml"
+done
