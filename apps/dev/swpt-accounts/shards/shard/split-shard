@@ -187,7 +187,7 @@ function validate_shard_kustomization_file {
     done
 }
 
-function validate_shard_postgres_cluster {
+function validate_shard_postgres_cluster_file {
     fname="$DIR/postgres-cluster.yaml"
     echo "Validating ${fname}:"
 
@@ -327,7 +327,7 @@ export SHARD1_ROUTING_KEY=$(echo "$SHARD1_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#
 
 validate_shards_kustomization_file
 validate_shard_kustomization_file
-validate_shard_postgres_cluster
+validate_shard_postgres_cluster_file
 ensure_successful_shard_kustomization_build
 ensure_no_existing_children_shards
 ensure_no_split_in_progress
