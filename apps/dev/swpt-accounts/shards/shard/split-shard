@@ -348,8 +348,8 @@ add_do_not_edit_comment "$DIR/kustomization.unsplit"
 create_child_shard 0
 create_child_shard 1
 
-echo "... Updating $DIR/kustomization.yaml"
+echo "... Adding comment to $DIR/kustomization.yaml"
 add_do_not_edit_comment "$DIR/kustomization.yaml"
 
-echo "... Updating $DIR/postgres-cluster.yaml"
+echo "... Adding comment to $DIR/postgres-cluster.yaml"
 add_do_not_edit_comment "$DIR/postgres-cluster.yaml"
