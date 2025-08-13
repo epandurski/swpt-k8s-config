@@ -77,11 +77,13 @@ function validate_shard_kustomization_file {
     yq_ensure "$fname" '.labels[0].pairs | length' 1
     yq_ensure "$fname" '.labels[0].pairs."app.kubernetes.io/instance"' "$SHARD_BASENAME"
 
-    echo '... Ensuring base resources are included.'
-    yq_ensure "$fname" ".resources[] | select(. == \"${BASE_DIR}\")" "$BASE_DIR"
+    echo '... Ensuring only needed resources are included.'
+    yq_ensure "$fname" ".resources | kind" seq
+    yq_ensure "$fname" ".resources | length" 2
+    yq_ensure "$fname" ".resources | contains([\"${BASE_DIR}\", \"postgres-cluster.yaml\"])" true
 
     echo "... Ensuring shard's configuration contains the correct routing key."
-    literals='.configMapGenerator[] | select(.name == "shardconfig") .literals'
+    literals=".configMapGenerator[] | select(.name == \"$SHARD_CONFIG\") .literals"
     varname='PROTOCOL_BROKER_QUEUE_ROUTING_KEY'
     yq_ensure "$fname" "${literals} | kind" seq
     yq_ensure "$fname" "${literals}[] | select(. == \"${varname}=*\")" "${varname}=${SHARD_ROUTING_KEY}"
@@ -219,9 +221,53 @@ function ensure_no_existing_children_shards {
     done
 }
 
+function add_do_not_edit_comment {
+    temp_file=$(mktemp)
+    echo '# This file is currently owned by the shard-splitting job. DO NOT EDIT!' >> "$temp_file"
+    echo "# Date: $(date)" >> "$temp_file"
+    echo '#' >> "$temp_file"
+    cat "$1" >> "$temp_file"
+    mv -f "$temp_file" "$1"
+}
+
+function create_child_shard {
+    child_suffix_var_name=SHARD${1}_SUFFIX
+    child_routing_key_var_name=SHARD${1}_ROUTING_KEY
+    eval child_suffix=\$$child_suffix_var_name
+    eval child_routing_key=\$$child_routing_key_var_name
+    child_name=$SHARDS_PREFIX$child_suffix
+    child_dir="$DIR/../$child_name"
+
+    echo "... Creating ${child_dir}/"
+    cp -r "$DIR" "${child_dir}"
+    rm "${child_dir}/kustomization.unsplit"
+    add_do_not_edit_comment "${child_dir}/kustomization.yaml"
+    add_do_not_edit_comment "${child_dir}/postgres-cluster.yaml"
+
+    # Ensure nothing except the database is running.
+    yq -i '.replicas[] |= (.count = 0)' "${child_dir}/kustomization.yaml"
+    if [[ $(yq '.replicas | has("tasks-processor")' "${child_dir}/kustomization.yaml") == false ]] ; then
+        yq -i '.replicas += [{"name": "tasks-processor", "count": 0}]' "${child_dir}/kustomization.yaml"
+    fi
+
+    # Set the correct child index.
+    yq -i ".nameSuffix = \"$child_suffix\"" "${child_dir}/kustomization.yaml"
+    yq -i ".labels[0].pairs.\"app.kubernetes.io/instance\" = \"$child_name\""\
+       "${child_dir}/kustomization.yaml"
+    yq -i "with(.configMapGenerator[] | select(.name == \"$SHARD_CONFIG\") .literals[] | select(. == \"PROTOCOL_BROKER_QUEUE_ROUTING_KEY=*\"); . = \"PROTOCOL_BROKER_QUEUE_ROUTING_KEY=${child_routing_key}\")"\
+       "${child_dir}/kustomization.yaml"
+
+    # Add "standby:" section to the PostgreSQL cluster declaration.
+    pg_version="$(yq '.spec.postgresql.version' "${child_dir}/postgres-cluster.yaml")"
+    namespace="$(basename "$(realpath "$DIR/../../")")"
+    s3_wal_path="s3://swpt/spilo/${namespace}-db${SHARD_SUFFIX}/wal/${pg_version}"
+    yq -i ".standby = {\"s3_wal_path\": \"${s3_wal_path}\"}" "${child_dir}/postgres-cluster.yaml"
+}
+
 find_script_dir || exit 3
 
 export BASE_DIR='../../../../base/swpt-accounts/shard/'
+export SHARD_CONFIG=shardconfig
 export SHARD_BASENAME=$(basename "$DIR")
 export SHARD_SUFFIX=$(echo "$SHARD_BASENAME" | sed -nE 's/^.*(\-[01]+)$/\1/p')
 export SHARD_ROUTING_KEY=$(echo "$SHARD_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
@@ -245,16 +291,11 @@ fi
 
 echo
 echo "Splitting \"$SHARD_BASENAME\":"
-
 echo "... Creating $DIR/kustomization.unsplit"
 cp "$DIR/kustomization.yaml" "$DIR/kustomization.unsplit"
 
-for shard_suffix in "$SHARD0_SUFFIX" "$SHARD1_SUFFIX"
-do
-    shard_name=$SHARDS_PREFIX$shard_suffix
-    child_dir="$DIR/../$shard_name"
-    echo "... Creating ${child_dir}/"
-    cp -r "$DIR" "${child_dir}"
-    rm "${child_dir}/kustomization.unsplit"
-    yq -i '.replicas[] |= (.count = 0)' "${child_dir}/kustomization.yaml"
-done
+create_child_shard 0
+create_child_shard 1
+add_do_not_edit_comment "$DIR/kustomization.yaml"
+add_do_not_edit_comment "$DIR/kustomization.unsplit"
+add_do_not_edit_comment "$DIR/postgres-cluster.yaml"
