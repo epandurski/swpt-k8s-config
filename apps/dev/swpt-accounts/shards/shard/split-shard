@@ -44,6 +44,50 @@ function yq_ensure {
     fi
 }
 
+function validate_shards_kustomization_file {
+    fname="$SHARDS_KUSTOMIZATION_FILE"
+    echo "Validating $fname:"
+
+    echo '... Ensuring required fields are present.'
+    yq_ensure "$fname" '.apiVersion' kustomize.config.k8s.io/v1beta1
+    yq_ensure "$fname" '.kind' Kustomization
+    yq_ensure "$fname" '.labels | kind' seq
+    yq_ensure "$fname" '.resources | kind' seq
+
+    echo '... Ensuring common labels are correctly declared.'
+    yq_ensure "$fname" '.labels | length' 1
+    yq_ensure "$fname" '.labels[0] | kind' map
+    yq_ensure "$fname" '.labels[0] | length' 2
+    yq_ensure "$fname" '.labels[0].includeSelectors' true
+    yq_ensure "$fname" '.labels[0].pairs | kind' map
+    yq_ensure "$fname" '.labels[0].pairs | length' 2
+    yq_ensure "$fname" '.labels[0].pairs."app.kubernetes.io/name"' swpt-accounts-shard
+    yq_ensure "$fname" '.labels[0].pairs."app.kubernetes.io/part-of"' swpt-accounts
+
+    echo '... Ensuring no additional resources and transformers are declared.'
+    yq_ensure "$fname" '. | has("configMapGenerator")' false
+    yq_ensure "$fname" '. | has("secretGenerator")' false
+    yq_ensure "$fname" '. | has("namespace")' false
+    yq_ensure "$fname" '. | has("namePrefix")' false
+    yq_ensure "$fname" '. | has("nameSuffix")' false
+    yq_ensure "$fname" '. | has("replicas")' false
+    yq_ensure "$fname" '. | has("patches")' false
+    yq_ensure "$fname" '. | has("replacements")' false
+    yq_ensure "$fname" '. | has("images")' false
+    yq_ensure "$fname" '. | has("configMapGenerator")' false
+    yq_ensure "$fname" '. | has("secretGenerator")' false
+
+    echo "... Ensuring ${SHARD_BASENAME}/ is included."
+    yq_ensure "$fname" ".resources | contains([\"${SHARD_BASENAME}/\"])" true
+
+    for shard_name in "$SHARDS_PREFIX$SHARD0_SUFFIX" "$SHARDS_PREFIX$SHARD1_SUFFIX"
+    do
+        echo "... Ensuring ${shard_name}/ is not included."
+        yq_ensure "$fname" ".resources | contains([\"${shard_name}\"])" false
+        yq_ensure "$fname" ".resources | contains([\"${shard_name}/\"])" false
+    done
+}
+
 function validate_shard_kustomization_file {
     fname="$DIR/kustomization.yaml"
     echo "Validating ${fname}:"
@@ -200,7 +244,7 @@ function ensure_successful_shard_kustomization_build {
 
 function ensure_no_split_in_progress {
     fname="$DIR/kustomization.unsplit"
-    echo "Checking $fname"
+    echo "Checking if $fname already exists."
     if [[ -e "$fname" ]]; then
         echo
         echo "ERROR: A split is already in progress for \"$SHARD_BASENAME\"."
@@ -212,7 +256,7 @@ function ensure_no_existing_children_shards {
     for shard_suffix in "$SHARD0_SUFFIX" "$SHARD1_SUFFIX"
     do
         child_dir="$DIR/../$SHARDS_PREFIX$shard_suffix"
-        echo "Checking ${child_dir}"
+        echo "Checking if ${child_dir} already exists."
         if [[ -e "$child_dir" ]]; then
             echo
             echo "ERROR: A child-shard already exists: $SHARDS_PREFIX$shard_suffix"
@@ -262,6 +306,9 @@ function create_child_shard {
     namespace="$(basename "$(realpath "$DIR/../../")")"
     s3_wal_path="s3://swpt/spilo/${namespace}-db${SHARD_SUFFIX}/wal/${pg_version}"
     yq -i ".standby = {\"s3_wal_path\": \"${s3_wal_path}\"}" "${child_dir}/postgres-cluster.yaml"
+
+    echo "... Adding ${child_name}/ to $SHARDS_KUSTOMIZATION_FILE"
+    yq -i ".resources += \"${child_name}/\"" "$SHARDS_KUSTOMIZATION_FILE"
 }
 
 find_script_dir || exit 3
@@ -271,12 +318,14 @@ export SHARD_CONFIG=shardconfig
 export SHARD_BASENAME=$(basename "$DIR")
 export SHARD_SUFFIX=$(echo "$SHARD_BASENAME" | sed -nE 's/^.*(\-[01]+)$/\1/p')
 export SHARD_ROUTING_KEY=$(echo "$SHARD_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
+export SHARDS_KUSTOMIZATION_FILE="$(realpath $DIR/../kustomization.yaml)"
 export SHARDS_PREFIX=$(echo "$SHARD_BASENAME" | sed -nE "s/^(.*)${SHARD_SUFFIX}$/\1/p")
 export SHARD0_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')0"
 export SHARD1_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')1"
 export SHARD0_ROUTING_KEY=$(echo "$SHARD0_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
 export SHARD1_ROUTING_KEY=$(echo "$SHARD1_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
 
+validate_shards_kustomization_file
 validate_shard_kustomization_file
 validate_shard_postgres_cluster
 ensure_successful_shard_kustomization_build
@@ -291,11 +340,16 @@ fi
 
 echo
 echo "Splitting \"$SHARD_BASENAME\":"
+
 echo "... Creating $DIR/kustomization.unsplit"
 cp "$DIR/kustomization.yaml" "$DIR/kustomization.unsplit"
+add_do_not_edit_comment "$DIR/kustomization.unsplit"
 
 create_child_shard 0
 create_child_shard 1
+
+echo "... Updating $DIR/kustomization.yaml"
 add_do_not_edit_comment "$DIR/kustomization.yaml"
-add_do_not_edit_comment "$DIR/kustomization.unsplit"
+
+echo "... Updating $DIR/postgres-cluster.yaml"
 add_do_not_edit_comment "$DIR/postgres-cluster.yaml"
