@@ -121,7 +121,7 @@ configMapGenerator:
 #
 replicas:
   - name: web-server
-    count: 0
+    count: 1
   - name: messages-flusher
     count: 0
   - name: messages-consumer
