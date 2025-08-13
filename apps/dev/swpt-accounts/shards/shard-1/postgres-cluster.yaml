@@ -1,5 +1,5 @@
 # This file is currently owned by the shard-splitting job. DO NOT EDIT!
-# Date: Wed Aug 13 04:35:54 PM EEST 2025
+# Date: Wed Aug 13 04:46:37 PM EEST 2025
 #
 apiVersion: "acid.zalan.do/v1"
 kind: postgresql
@@ -49,5 +49,5 @@ spec:
     db_owner: []
   databases:
     db: db_owner
-standby:
-  s3_wal_path: s3://swpt/spilo/swpt-accounts-db/wal/17
+  standby:
+    s3_wal_path: s3://swpt/spilo/swpt-accounts-db/wal/17

@@ -305,7 +305,7 @@ function create_child_shard {
     pg_version="$(yq '.spec.postgresql.version' "${child_dir}/postgres-cluster.yaml")"
     namespace="$(basename "$(realpath "$DIR/../../")")"
     s3_wal_path="s3://swpt/spilo/${namespace}-db${SHARD_SUFFIX}/wal/${pg_version}"
-    yq -i ".standby = {\"s3_wal_path\": \"${s3_wal_path}\"}" "${child_dir}/postgres-cluster.yaml"
+    yq -i ".spec.standby = {\"s3_wal_path\": \"${s3_wal_path}\"}" "${child_dir}/postgres-cluster.yaml"
 
     echo "... Adding ${child_name}/ to $SHARDS_KUSTOMIZATION_FILE"
     yq -i ".resources += \"${child_name}/\"" "$SHARDS_KUSTOMIZATION_FILE"
