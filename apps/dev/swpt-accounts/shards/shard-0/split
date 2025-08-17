@@ -292,8 +292,6 @@ function create_child_shard {
     echo "... Creating ${child_dir}/"
     cp -r "$DIR" "${child_dir}"
     rm "${child_dir}/kustomization.unsplit"
-    add_do_not_edit_comment "${child_dir}/kustomization.yaml"
-    add_do_not_edit_comment "${child_dir}/postgres-cluster.yaml"
 
     # Ensure nothing except the database is running.
     yq -i '.replicas[] |= (.count = 0)' "${child_dir}/kustomization.yaml"
@@ -314,7 +312,7 @@ function create_child_shard {
     s3_wal_path="s3://swpt/spilo/${namespace}-db${SHARD_SUFFIX}/wal/${pg_version}"
     yq -i ".spec.standby = {\"s3_wal_path\": \"${s3_wal_path}\"}" "${child_dir}/postgres-cluster.yaml"
 
-    echo "... Adding ${child_name}/ to $SHARDS_KUSTOMIZATION_FILE"
+    echo "... Adding ${child_name}/ to the list of resources in $SHARDS_KUSTOMIZATION_FILE"
     yq -i ".resources += \"${child_name}/\"" "$SHARDS_KUSTOMIZATION_FILE"
 }
 
@@ -352,15 +350,22 @@ echo "... Creating $DIR/kustomization.unsplit"
 cp "$DIR/kustomization.yaml" "$DIR/kustomization.unsplit"
 add_do_not_edit_comment "$DIR/kustomization.unsplit"
 
-create_child_shard 0
-create_child_shard 1
+varname='DELETE_PARENT_SHARD_RECORDS'
+echo "... Setting $varname=true in $DIR/kustomization.yaml"
+literals=".configMapGenerator[] | select(.name == \"$SHARD_CONFIG\") .literals"
+vardecl="${literals}[] | select(. == \"${varname}=*\")"
+yq -i "del($vardecl)" "$DIR/kustomization.yaml"
+yq -i "with($literals; . += \"$varname=true\")" "$DIR/kustomization.yaml"
 
-job_path="${BASE_DIR}splitting-phase-1-job.yaml"
-echo "... Adding $job_path to $DIR/kustomization.yaml"
-yq -i ".resources += \"$job_path\"" "$DIR/kustomization.yaml"
+echo "... Adding comment to $DIR/kustomization.yaml"
 add_do_not_edit_comment "$DIR/kustomization.yaml"
 
 echo "... Adding comment to $DIR/postgres-cluster.yaml"
 add_do_not_edit_comment "$DIR/postgres-cluster.yaml"
 
-# TODO: include the split-job to the shard's kustomization file.
+create_child_shard 0
+create_child_shard 1
+
+job_path="${BASE_DIR}splitting-phase-1-job.yaml"
+echo "... Adding $job_path to the list of resources in $DIR/kustomization.yaml"
+yq -i ".resources += \"$job_path\"" "$DIR/kustomization.yaml"
