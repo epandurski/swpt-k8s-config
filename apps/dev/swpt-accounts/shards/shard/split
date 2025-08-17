@@ -5,12 +5,12 @@ IFS=$'\n\t'
 if [[ "$#" != 0 && ${1:-} != "--validate-only" ]]; then
     echo 'Splits the shard into two children shards.'
     echo
-    echo 'Usage: split-shard'
-    echo '       split-shard --validate-only'
+    echo 'Usage: split'
+    echo '       split --validate-only'
     exit 2
 fi
 
-for dependency in sed kustomize yq envsubst
+for dependency in sed kustomize yq
 do
     if ! which "$dependency" &> /dev/null; then
         echo
@@ -19,6 +19,13 @@ do
         exit 2
     fi
 done
+
+if ! yq --version | grep -iE 'version\s+v?4\.[0-9]'; then
+    echo
+    echo "ERROR: A wrong version of 'yq' is installed on your system."
+    echo
+    exit 2
+fi
 
 function find_script_dir {
     SOURCE=${BASH_SOURCE[0]}
