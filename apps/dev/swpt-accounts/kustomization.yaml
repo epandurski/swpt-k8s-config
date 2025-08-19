@@ -294,6 +294,8 @@ images:
 - name: swpt-nfs-server
   newName: ghcr.io/swaptacular/swpt_nfs_server
   digest: sha256:f3674f3a027e961d6c4be308094e1ec129859fda1aafac85e5920edb0c9bdb7f
+- name: swpt-split-shard
+  newName: ghcr.io/swaptacular/swpt_split_shard  # TODO: Copy to apps/example.
 
 resources:
 - ../../base/swpt-accounts/
