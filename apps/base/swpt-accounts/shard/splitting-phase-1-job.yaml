@@ -39,13 +39,13 @@ spec:
           - mountPath: "/mnt/git-ops/"
             name: git-repo-working-copy
             readOnly: false
-          - name: git-pull-ssh-id
+          - name: git-ops-ssh-id
             mountPath: "/etc/ssh/id_rsa"
             subPath: id_rsa
-          - name: git-pull-ssh-id
+          - name: git-ops-ssh-id
             mountPath: "/etc/ssh/id_rsa.pub"
             subPath: id_rsa.pub
-          - name: git-pull-ssh-id
+          - name: git-ops-ssh-id
             mountPath: "/etc/ssh/id_rsa-cert.pub"
             subPath: id_rsa-cert.pub
       initContainers:
@@ -81,8 +81,8 @@ spec:
       volumes:
         - name: git-repo-working-copy
           emptyDir: {}
-        - name: git-pull-ssh-id
+        - name: git-ops-ssh-id
           secret:
-            secretName: git-pull-ssh-id
+            secretName: git-ops-ssh-id
             defaultMode: 0600
   backoffLimit: 2147483647
