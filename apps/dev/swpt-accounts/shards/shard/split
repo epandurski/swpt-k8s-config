@@ -307,7 +307,7 @@ function create_child_shard {
        "${child_dir}/kustomization.yaml"
 
     # Add "standby:" section to the PostgreSQL cluster declaration.
-    pg_version="$(yq '.spec.postgresql.version' "${child_dir}/postgres-cluster.yaml")"
+    pg_version="$(yq '... comments="" | .spec.postgresql.version' "${child_dir}/postgres-cluster.yaml")"
     namespace="$(basename "$(realpath "$DIR/../../")")"
     s3_wal_path="s3://swpt/spilo/${namespace}-db${SHARD_SUFFIX}/wal/${pg_version}"
     yq -i ".spec.standby = {\"s3_wal_path\": \"${s3_wal_path}\"}" "${child_dir}/postgres-cluster.yaml"
