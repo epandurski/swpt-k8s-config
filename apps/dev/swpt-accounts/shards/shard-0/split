@@ -41,7 +41,7 @@ function find_script_dir {
 }
 
 function yq_ensure {
-    result=$(yq "... comments=\"\" | $2" "$1")
+    result="$(yq "... comments=\"\" | $2" "$1")"
     if [[ "$result" != "$3" ]]; then
         echo
         echo "ERROR: Unexpected value for '$2' in $1."
@@ -304,7 +304,7 @@ function create_child_shard {
        "${child_dir}/kustomization.yaml"
 
     # Add "standby:" section to the PostgreSQL cluster declaration.
-    pg_version="$(yq '... comments="" | .spec.postgresql.version' "${child_dir}/postgres-cluster.yaml")"
+    pg_version="$(yq '.spec.postgresql.version' "${child_dir}/postgres-cluster.yaml")"
     namespace="$(basename "$(realpath "$DIR/../../")")"
     s3_wal_path="s3://swpt/spilo/${namespace}-db${SHARD_SUFFIX}/wal/${pg_version}"
     yq -i ".spec.standby = {\"s3_wal_path\": \"${s3_wal_path}\"}" "${child_dir}/postgres-cluster.yaml"
@@ -313,20 +313,79 @@ function create_child_shard {
     yq -i ".resources += \"${child_name}/\"" "$SHARDS_KUSTOMIZATION_FILE"
 }
 
+function split_shard {
+    echo
+    echo "Splitting \"$SHARD_BASENAME\":"
+
+    echo "... Creating $DIR/kustomization.unsplit"
+    cp "$DIR/kustomization.yaml" "$DIR/kustomization.unsplit"
+    add_do_not_edit_comment "$DIR/kustomization.unsplit"
+
+    echo "... Setting count=1 for ${SINGLETON_REPLICA_NAME}'s replicas in $DIR/kustomization.yaml"
+    yq -i "with(.replicas[] | select(.name == \"$SINGLETON_REPLICA_NAME\"); del(.))" "$DIR/kustomization.yaml"
+    yq -i ".replicas += [{\"name\": \"$SINGLETON_REPLICA_NAME\", \"count\": 1}]" "$DIR/kustomization.yaml"
+
+    varname='DELETE_PARENT_SHARD_RECORDS'
+    echo "... Setting $varname=true in $DIR/kustomization.yaml"
+    literals=".configMapGenerator[] | select(.name == \"$SHARD_CONFIG\") .literals"
+    vardecl="${literals}[] | select(. == \"${varname}=*\")"
+    yq -i "del($vardecl)" "$DIR/kustomization.yaml"
+    yq -i "with($literals; . += \"$varname=true\")" "$DIR/kustomization.yaml"
+
+    echo "... Adding comment in $DIR/kustomization.yaml"
+    add_do_not_edit_comment "$DIR/kustomization.yaml"
+
+    echo "... Adding comment in $DIR/postgres-cluster.yaml"
+    add_do_not_edit_comment "$DIR/postgres-cluster.yaml"
+
+    create_child_shard 0
+    create_child_shard 1
+
+    echo "... Adding splitting-jobs-config to the list of generated configmaps in $DIR/kustomization.yaml"
+    ennvars=""
+    for envvar_name in \
+            SHARDS_PREFIX\
+            SHARDS_PG_CLUSTER_PREFIX\
+            SHARD_SUFFIX\
+            SHARD0_SUFFIX\
+            SHARD1_SUFFIX\
+            SHARD_ROUTING_KEY\
+            SHARD0_ROUTING_KEY\
+            SHARD1_ROUTING_KEY\
+            CONSUMER_TASK_NAME\
+            DRAINER_TASK_NAME
+    do
+        eval envvar_value="\$$envvar_name"
+        envvars+="\"${envvar_name}=${envvar_value}\", "
+    done
+    envvars+="\"SHARDS_SUBDIR=${SHARDS_DIR#$GITOPS_ROOT_DIR/}\""
+    yq -i ".configMapGenerator += {\"name\": \"splitting-jobs-config\", \"literals\": [${envvars}]}"\
+       "$DIR/kustomization.yaml"
+
+    job_path="${BASE_DIR}splitting-phase-1-job.yaml"
+    echo "... Adding $job_path to the list of resources in $DIR/kustomization.yaml"
+    yq -i ".resources += \"$job_path\"" "$DIR/kustomization.yaml"
+}
+
 find_script_dir || exit 3
 
-export BASE_DIR='../../../../base/swpt-accounts/shard/'
-export SINGLETON_REPLICA_NAME=tasks-processor
-export SHARD_CONFIG=shardconfig
-export SHARD_BASENAME=$(basename "$DIR")
-export SHARD_SUFFIX=$(echo "$SHARD_BASENAME" | sed -nE 's/^.*(\-[01]+)$/\1/p')
-export SHARD_ROUTING_KEY=$(echo "$SHARD_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
-export SHARDS_KUSTOMIZATION_FILE="$(realpath $DIR/../kustomization.yaml)"
-export SHARDS_PREFIX=$(echo "$SHARD_BASENAME" | sed -nE "s/^(.*)${SHARD_SUFFIX}$/\1/p")
-export SHARD0_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')0"
-export SHARD1_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')1"
-export SHARD0_ROUTING_KEY=$(echo "$SHARD0_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
-export SHARD1_ROUTING_KEY=$(echo "$SHARD1_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
+GITOPS_ROOT_DIR="$(realpath $DIR/../../../../../)"
+SHARDS_PG_CLUSTER_PREFIX=db
+BASE_DIR='../../../../base/swpt-accounts/shard/'
+SINGLETON_REPLICA_NAME=tasks-processor
+CONSUMER_TASK_NAME=messages-consumer
+DRAINER_TASK_NAME=messages-drainer
+SHARD_CONFIG=shardconfig
+SHARD_BASENAME=$(basename "$DIR")
+SHARD_SUFFIX=$(echo "$SHARD_BASENAME" | sed -nE 's/^.*(\-[01]+)$/\1/p')
+SHARD_ROUTING_KEY=$(echo "$SHARD_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
+SHARDS_DIR="$(realpath $DIR/../)"
+SHARDS_KUSTOMIZATION_FILE="$SHARDS_DIR/kustomization.yaml"
+SHARDS_PREFIX=$(echo "$SHARD_BASENAME" | sed -nE "s/^(.*)${SHARD_SUFFIX}$/\1/p")
+SHARD0_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')0"
+SHARD1_SUFFIX="$(echo "$SHARD_SUFFIX" | sed 's/^$/-/')1"
+SHARD0_ROUTING_KEY=$(echo "$SHARD0_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
+SHARD1_ROUTING_KEY=$(echo "$SHARD1_SUFFIX" | sed 's/^-//; s/./&./g; s/$/#/')
 
 validate_shards_kustomization_file
 validate_shard_kustomization_file
@@ -341,33 +400,6 @@ if [[ ${1:-} == "--validate-only" ]]; then
     exit 0
 fi
 
+split_shard
 echo
-echo "Splitting \"$SHARD_BASENAME\":"
-
-echo "... Creating $DIR/kustomization.unsplit"
-cp "$DIR/kustomization.yaml" "$DIR/kustomization.unsplit"
-add_do_not_edit_comment "$DIR/kustomization.unsplit"
-
-echo "... Setting count=1 for ${SINGLETON_REPLICA_NAME}'s replicas in $DIR/kustomization.yaml"
-yq -i "with(.replicas[] | select(.name == \"$SINGLETON_REPLICA_NAME\"); del(.))" "$DIR/kustomization.yaml"
-yq -i ".replicas += [{\"name\": \"$SINGLETON_REPLICA_NAME\", \"count\": 1}]" "$DIR/kustomization.yaml"
-
-varname='DELETE_PARENT_SHARD_RECORDS'
-echo "... Setting $varname=true in $DIR/kustomization.yaml"
-literals=".configMapGenerator[] | select(.name == \"$SHARD_CONFIG\") .literals"
-vardecl="${literals}[] | select(. == \"${varname}=*\")"
-yq -i "del($vardecl)" "$DIR/kustomization.yaml"
-yq -i "with($literals; . += \"$varname=true\")" "$DIR/kustomization.yaml"
-
-echo "... Adding comment to $DIR/kustomization.yaml"
-add_do_not_edit_comment "$DIR/kustomization.yaml"
-
-echo "... Adding comment to $DIR/postgres-cluster.yaml"
-add_do_not_edit_comment "$DIR/postgres-cluster.yaml"
-
-create_child_shard 0
-create_child_shard 1
-
-job_path="${BASE_DIR}splitting-phase-1-job.yaml"
-echo "... Adding $job_path to the list of resources in $DIR/kustomization.yaml"
-yq -i ".resources += \"$job_path\"" "$DIR/kustomization.yaml"
+echo "\"$SHARD_BASENAME\" has been prepared for splitting."

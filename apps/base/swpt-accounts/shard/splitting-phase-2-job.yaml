@@ -16,9 +16,9 @@ spec:
       imagePullSecrets:
         - name: regcreds
       containers:
-      - name: prepare-for-draining
+      - name: finalize-splitting
         image: swpt-split-shard
-        args: ['prepare-for-draining']
+        args: ['false']
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -54,38 +54,6 @@ spec:
           - name: git-ops-ssh-id
             mountPath: "/etc/ssh/id_rsa-cert.pub"
             subPath: id_rsa-cert.pub
-      initContainers:
-      - name: verify-shard-content
-        image: swpt-accounts
-        args: ['verify_shard_content']
-        securityContext:
-          allowPrivilegeEscalation: false
-          capabilities:
-            drop:
-            - ALL
-        envFrom:
-          - secretRef:
-              name: db-owner-credentials
-            prefix: pg_
-          - secretRef:
-              name: broker-default-user
-            prefix: rmq_
-          - configMapRef:
-              name: shardconfig
-        env:
-          - name: POSTGRES_URL
-            value: "postgresql+psycopg://$(pg_username):$(pg_password)@$(pg_cluster_name):5432/db"
-          - name: PROTOCOL_BROKER_URL
-            value: "$(rmq_connection_string)"
-          - name: PROTOCOL_BROKER_QUEUE
-            value: "$(pg_cluster_name)"
-        resources:
-          requests:
-            cpu: 10m
-            memory: 150Mi
-          limits:
-            cpu: "1"
-            memory: 300Mi
       restartPolicy: OnFailure
       volumes:
         - name: git-repo-working-copy
