@@ -25,6 +25,9 @@ spec:
             drop:
             - ALL
         envFrom:
+          - secretRef:
+              name: db-owner-credentials
+            prefix: pg_
           - configMapRef:
               name: git-ops-config
           - configMapRef:
