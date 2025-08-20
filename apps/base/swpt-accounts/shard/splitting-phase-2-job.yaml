@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: splitting-phase-1-job
+  name: splitting-phase-2-job
   labels:
     app.kubernetes.io/component: shard-splitting-job
 spec:
