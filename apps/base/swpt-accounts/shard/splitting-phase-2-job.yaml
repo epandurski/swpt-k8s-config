@@ -11,6 +11,7 @@ spec:
       labels:
         app.kubernetes.io/component: shard-splitting-job
     spec:
+      serviceAccountName: shard-splitter
       podReplacementPolicy: Failed
       priorityClassName: shard-background-worker
       imagePullSecrets:
