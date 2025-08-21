@@ -20,7 +20,7 @@ do
     fi
 done
 
-if ! yq --version | grep -iE 'version\s+v?4\.[0-9]'; then
+if ! yq --version | grep -iE 'version\s+v?4\.[0-9]' > /dev/null; then
     echo
     echo "ERROR: A wrong version of 'yq' is installed on your system."
     echo
@@ -344,6 +344,8 @@ function split_shard {
     echo "... Adding splitting-jobs-config to the list of generated configmaps in $DIR/kustomization.yaml"
     ennvars=""
     for envvar_name in \
+            SHARDS_APP\
+            SHARDS_COMPONENTS\
             SHARDS_PREFIX\
             SHARDS_PG_CLUSTER_PREFIX\
             SHARD_SUFFIX\
@@ -372,6 +374,8 @@ find_script_dir || exit 3
 GITOPS_ROOT_DIR="$(realpath $DIR/../../../../../)"
 SHARDS_PG_CLUSTER_PREFIX=db
 BASE_DIR='../../../../base/swpt-accounts/shard/'
+SHARDS_APP=swpt-accounts-shard
+SHARDS_COMPONENTS='chores-consumer messages-consumer messages-flusher tasks-processor web-server'
 SINGLETON_REPLICA_NAME=tasks-processor
 CONSUMER_TASK_NAME=messages-consumer
 DRAINER_TASK_NAME=messages-drainer
