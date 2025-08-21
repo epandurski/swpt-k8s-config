@@ -37,8 +37,8 @@ spec:
             value: "/mnt/git-ops"
         resources:
           requests:
-            cpu: 10m
-            memory: 150Mi
+            cpu: 50m
+            memory: 200Mi
             ephemeral-storage: 1Gi
           limits:
             cpu: "1"
@@ -84,8 +84,8 @@ spec:
             value: "$(pg_cluster_name)"
         resources:
           requests:
-            cpu: 10m
-            memory: 150Mi
+            cpu: 50m
+            memory: 200Mi
           limits:
             cpu: "1"
             memory: 300Mi

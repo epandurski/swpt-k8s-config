@@ -37,8 +37,8 @@ spec:
             value: "/mnt/git-ops"
         resources:
           requests:
-            cpu: 10m
-            memory: 150Mi
+            cpu: 50m
+            memory: 200Mi
             ephemeral-storage: 1Gi
           limits:
             cpu: "1"
@@ -57,6 +57,30 @@ spec:
           - name: git-ops-ssh-id
             mountPath: "/etc/ssh/id_rsa-cert.pub"
             subPath: id_rsa-cert.pub
+      initContainers:
+      - name: wait-for-pods-termination
+        image: swpt-split-shard
+        args: ['wait-for-pods-termination']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+          - configMapRef:
+              name: splitting-jobs-config
+        env:
+          - name: APP_K8S_NAMESPACE
+            valueFrom:
+              fieldRef:
+                fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+          limits:
+            cpu: "1"
+            memory: 300Mi
       restartPolicy: OnFailure
       volumes:
         - name: git-repo-working-copy
