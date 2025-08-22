@@ -1,5 +1,5 @@
 # This file is currently owned by the shard-splitting job. DO NOT EDIT!
-# Date: Thu Aug 21 08:00:08 PM EEST 2025
+# Date: Fri Aug 22 03:21:35 PM EEST 2025
 #
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -119,7 +119,8 @@ configMapGenerator:
   - name: splitting-jobs-config
     literals:
       - SHARDS_APP=swpt-accounts-shard
-      - SHARDS_COMPONENTS=chores-consumer messages-consumer messages-flusher tasks-processor web-server
+      - SHARDS_CRITICAL_WORKLOADS=http-cache web-server
+      - SHARDS_COMPONENTS=chores-consumer messages-consumer messages-flusher tasks-processor
       - SHARDS_PREFIX=shard
       - SHARDS_PG_CLUSTER_PREFIX=db
       - SHARD_SUFFIX=
@@ -136,18 +137,16 @@ configMapGenerator:
 #
 replicas:
   - name: web-server
-    count: 0
+    count: 1
   - name: messages-flusher
-    count: 0
+    count: 1
   - name: messages-consumer
-    count: 0
+    count: 1
   - name: chores-consumer
-    count: 0
+    count: 1
   - name: http-cache
-    count: 0
+    count: 1
   - name: tasks-processor
-    count: 0
-  - name: messages-drainer
     count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
@@ -189,7 +188,7 @@ secretGenerator:
 resources:
   - ../../../../base/swpt-accounts/shard/
   - postgres-cluster.yaml
-  - ../../../../base/swpt-accounts/shard/splitting-phase-2-job.yaml
+  - ../../../../base/swpt-accounts/shard/splitting-phase-1-job.yaml
 patches:
   - path: ../../../../base/swpt-accounts/shard/patches/postgres-cluster.yaml
     target:

@@ -41,7 +41,7 @@ function find_script_dir {
 }
 
 function yq_ensure {
-    result="$(yq "... comments=\"\" | $2" "$1")"
+    result="$(yq "$2" "$1")"
     if [[ "$result" != "$3" ]]; then
         echo
         echo "ERROR: Unexpected value for '$2' in $1."
@@ -345,6 +345,7 @@ function split_shard {
     ennvars=""
     for envvar_name in \
             SHARDS_APP\
+            SHARDS_CRITICAL_WORKLOADS\
             SHARDS_COMPONENTS\
             SHARDS_PREFIX\
             SHARDS_PG_CLUSTER_PREFIX\
@@ -375,7 +376,8 @@ GITOPS_ROOT_DIR="$(realpath $DIR/../../../../../)"
 SHARDS_PG_CLUSTER_PREFIX=db
 BASE_DIR='../../../../base/swpt-accounts/shard/'
 SHARDS_APP=swpt-accounts-shard
-SHARDS_COMPONENTS='chores-consumer messages-consumer messages-flusher tasks-processor web-server'
+SHARDS_CRITICAL_WORKLOADS='http-cache web-server'
+SHARDS_COMPONENTS='chores-consumer messages-consumer messages-flusher tasks-processor'
 SINGLETON_REPLICA_NAME=tasks-processor
 CONSUMER_TASK_NAME=messages-consumer
 DRAINER_TASK_NAME=messages-drainer
