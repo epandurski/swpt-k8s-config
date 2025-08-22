@@ -1,5 +1,5 @@
 # This file is currently owned by the shard-splitting job. DO NOT EDIT!
-# Date: Fri Aug 22 03:21:35 PM EEST 2025
+# Date: Fri Aug 22 06:00:40 PM EEST 2025
 #
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
@@ -121,7 +121,7 @@ configMapGenerator:
 #
 replicas:
   - name: web-server
-    count: 0
+    count: 1
   - name: messages-flusher
     count: 0
   - name: messages-consumer
@@ -129,7 +129,7 @@ replicas:
   - name: chores-consumer
     count: 0
   - name: http-cache
-    count: 0
+    count: 1
   - name: tasks-processor
     count: 0
 secretGenerator:

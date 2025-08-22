@@ -17,9 +17,9 @@ spec:
       imagePullSecrets:
         - name: regcreds
       containers:
-      - name: finalize-splitting
+      - name: prepare-for-running-new-shards
         image: swpt-split-shard
-        args: ['false']
+        args: ['prepare-for-running-new-shards']
         securityContext:
           allowPrivilegeEscalation: false
           capabilities:
@@ -75,6 +75,138 @@ spec:
             valueFrom:
               fieldRef:
                 fieldPath: metadata.namespace
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+          limits:
+            cpu: "1"
+            memory: 300Mi
+      - name: subscribe-0
+        image: swpt-accounts
+        args: ['subscribe']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+          - secretRef:
+              name: db-owner-credentials
+            prefix: pg_
+          - secretRef:
+              name: broker-default-user
+            prefix: rmq_
+          - configMapRef:
+              name: splitting-jobs-config
+        env:
+          - name: POSTGRES_URL
+            value: "postgresql+psycopg://$(pg_username):$(pg_password)@$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD0_SUFFIX):5432/db"
+          - name: PROTOCOL_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: PROTOCOL_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD0_SUFFIX)"
+          - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
+            value: "$(SHARD0_ROUTING_KEY)"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+          limits:
+            cpu: "1"
+            memory: 300Mi
+      - name: subscribe-1
+        image: swpt-accounts
+        args: ['subscribe']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+          - secretRef:
+              name: db-owner-credentials
+            prefix: pg_
+          - secretRef:
+              name: broker-default-user
+            prefix: rmq_
+          - configMapRef:
+              name: splitting-jobs-config
+        env:
+          - name: POSTGRES_URL
+            value: "postgresql+psycopg://$(pg_username):$(pg_password)@$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD1_SUFFIX):5432/db"
+          - name: PROTOCOL_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: PROTOCOL_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD1_SUFFIX)"
+          - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
+            value: "$(SHARD1_ROUTING_KEY)"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+          limits:
+            cpu: "1"
+            memory: 300Mi
+      - name: unsubscribe
+        image: swpt-accounts
+        args: ['unsubscribe']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+          - secretRef:
+              name: db-owner-credentials
+            prefix: pg_
+          - secretRef:
+              name: broker-default-user
+            prefix: rmq_
+          - configMapRef:
+              name: splitting-jobs-config
+        env:
+          - name: POSTGRES_URL
+            value: "postgresql+psycopg://$(pg_username):$(pg_password)@$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX):5432/db"
+          - name: PROTOCOL_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: PROTOCOL_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX)"
+          - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
+            value: "$(SHARD_ROUTING_KEY)"
+        resources:
+          requests:
+            cpu: 50m
+            memory: 200Mi
+          limits:
+            cpu: "1"
+            memory: 300Mi
+      - name: delete-queue
+        image: swpt-accounts
+        args: ['delete_queue']
+        securityContext:
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        envFrom:
+          - secretRef:
+              name: db-owner-credentials
+            prefix: pg_
+          - secretRef:
+              name: broker-default-user
+            prefix: rmq_
+          - configMapRef:
+              name: splitting-jobs-config
+        env:
+          - name: POSTGRES_URL
+            value: "postgresql+psycopg://$(pg_username):$(pg_password)@$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX):5432/db"
+          - name: PROTOCOL_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: PROTOCOL_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX)"
+          - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
+            value: "$(SHARD_ROUTING_KEY)"
         resources:
           requests:
             cpu: 50m
