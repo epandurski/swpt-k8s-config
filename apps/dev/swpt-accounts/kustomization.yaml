@@ -281,7 +281,7 @@ replicas:
 images:
 - name: swpt-accounts
   newName: ghcr.io/swaptacular/swpt_accounts
-  digest: sha256:99ca940d7e634153c689907d6e5d920b23887023cb72fd44efd78749c7397f02
+  digest: sha256:ab7631d357c644632d33acad38d6a6dd6054fb8d25964a394a525e3aaf934ab5
 - name: swpt-apiproxy
   newName: ghcr.io/swaptacular/swpt_apiproxy
   digest: sha256:7a396d200c4c023f5cf46a3dc45d202917df4ef184e33580c3177a70c4a3675b
