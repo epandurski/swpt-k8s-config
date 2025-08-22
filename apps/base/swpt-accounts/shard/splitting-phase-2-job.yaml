@@ -108,6 +108,8 @@ spec:
             value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD0_SUFFIX)"
           - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
             value: "$(SHARD0_ROUTING_KEY)"
+          - name: APP_LOG_LEVEL
+            value: info
         resources:
           requests:
             cpu: 50m
@@ -141,6 +143,8 @@ spec:
             value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD1_SUFFIX)"
           - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
             value: "$(SHARD1_ROUTING_KEY)"
+          - name: APP_LOG_LEVEL
+            value: info
         resources:
           requests:
             cpu: 50m
@@ -174,6 +178,8 @@ spec:
             value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX)"
           - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
             value: "$(SHARD_ROUTING_KEY)"
+          - name: APP_LOG_LEVEL
+            value: info
         resources:
           requests:
             cpu: 50m
@@ -198,6 +204,8 @@ spec:
             prefix: rmq_
           - configMapRef:
               name: splitting-jobs-config
+          - name: APP_LOG_LEVEL
+            value: info
         env:
           - name: POSTGRES_URL
             value: "postgresql+psycopg://$(pg_username):$(pg_password)@$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX):5432/db"
