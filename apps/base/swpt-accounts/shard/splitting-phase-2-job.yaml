@@ -108,6 +108,12 @@ spec:
             value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD0_SUFFIX)"
           - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
             value: "$(SHARD0_ROUTING_KEY)"
+          - name: CHORES_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: CHORES_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD0_SUFFIX)-chores"
+          - name: FETCH_API_URL
+            value: "http://apiproxy"
           - name: APP_LOG_LEVEL
             value: info
         resources:
@@ -143,6 +149,12 @@ spec:
             value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD1_SUFFIX)"
           - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
             value: "$(SHARD1_ROUTING_KEY)"
+          - name: CHORES_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: CHORES_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD1_SUFFIX)-chores"
+          - name: FETCH_API_URL
+            value: "http://apiproxy"
           - name: APP_LOG_LEVEL
             value: info
         resources:
@@ -178,6 +190,12 @@ spec:
             value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX)"
           - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
             value: "$(SHARD_ROUTING_KEY)"
+          - name: CHORES_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: CHORES_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX)-chores"
+          - name: FETCH_API_URL
+            value: "http://apiproxy"
           - name: APP_LOG_LEVEL
             value: info
         resources:
@@ -213,6 +231,12 @@ spec:
             value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX)"
           - name: PROTOCOL_BROKER_QUEUE_ROUTING_KEY
             value: "$(SHARD_ROUTING_KEY)"
+          - name: CHORES_BROKER_URL
+            value: "$(rmq_connection_string)"
+          - name: CHORES_BROKER_QUEUE
+            value: "$(SHARDS_PG_CLUSTER_PREFIX)$(SHARD_SUFFIX)-chores"
+          - name: FETCH_API_URL
+            value: "http://apiproxy"
           - name: APP_LOG_LEVEL
             value: info
         resources:
