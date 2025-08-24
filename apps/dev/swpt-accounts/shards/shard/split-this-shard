@@ -367,6 +367,7 @@ function split_shard {
             SHARD_ROUTING_KEY\
             SHARD0_ROUTING_KEY\
             SHARD1_ROUTING_KEY\
+            APIPROXY_CONFIG\
             CONSUMER_TASK_NAME\
             DRAINER_TASK_NAME
     do
@@ -387,6 +388,7 @@ find_script_dir || exit 3
 GITOPS_ROOT_DIR="$(realpath $DIR/../../../../../)"
 SHARDS_PG_CLUSTER_PREFIX=db
 BASE_DIR='../../../../base/swpt-accounts/shard/'
+APIPROXY_CONFIG='../../apiproxy.conf'
 SHARDS_APP=swpt-accounts-shard
 SHARDS_CRITICAL_WORKLOADS='http-cache web-server'
 SHARDS_COMPONENTS='chores-consumer messages-consumer messages-flusher tasks-processor'
