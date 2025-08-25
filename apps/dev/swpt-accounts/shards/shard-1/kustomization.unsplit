@@ -116,23 +116,6 @@ configMapGenerator:
     files:
       - nginx.conf=../../../../base/swpt-accounts/shard/static/nginx.conf
       - default.conf.template=../../../../base/swpt-accounts/shard/static/default.conf.template
-  - name: splitting-jobs-config
-    literals:
-      - SHARDS_APP=swpt-accounts-shard
-      - SHARDS_CRITICAL_WORKLOADS=http-cache web-server
-      - SHARDS_COMPONENTS=chores-consumer messages-consumer messages-flusher tasks-processor
-      - SHARDS_PREFIX=shard
-      - SHARDS_PG_CLUSTER_PREFIX=db
-      - SHARD_SUFFIX=-1
-      - SHARD0_SUFFIX=-10
-      - SHARD1_SUFFIX=-11
-      - SHARD_ROUTING_KEY=1.#
-      - SHARD0_ROUTING_KEY=1.0.#
-      - SHARD1_ROUTING_KEY=1.1.#
-      - APIPROXY_CONFIG=../../apiproxy.conf
-      - CONSUMER_TASK_NAME=messages-consumer
-      - DRAINER_TASK_NAME=messages-drainer
-      - SHARDS_SUBDIR=apps/dev/swpt-accounts/shards
 # The number of replicas for each component. One replica works fine,
 # but to have high-availability, should be at least 2.
 #
@@ -146,8 +129,6 @@ replicas:
   - name: chores-consumer
     count: 1
   - name: http-cache
-    count: 1
-  - name: tasks-processor
     count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
@@ -189,7 +170,6 @@ secretGenerator:
 resources:
   - ../../../../base/swpt-accounts/shard/
   - postgres-cluster.yaml
-  - ../../../../base/swpt-accounts/shard/splitting-phase-1-job.yaml
 patches:
   - path: ../../../../base/swpt-accounts/shard/patches/postgres-cluster.yaml
     target:

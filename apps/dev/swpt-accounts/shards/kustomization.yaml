@@ -8,3 +8,5 @@ labels:
 resources:
   - shard-0/
   - shard-1/
+  - shard-10/
+  - shard-11/
