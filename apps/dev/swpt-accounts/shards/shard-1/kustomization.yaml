@@ -140,14 +140,16 @@ replicas:
   - name: web-server
     count: 1
   - name: messages-flusher
-    count: 1
+    count: 0
   - name: messages-consumer
-    count: 1
+    count: 0
   - name: chores-consumer
-    count: 1
+    count: 0
   - name: http-cache
     count: 1
   - name: tasks-processor
+    count: 0
+  - name: messages-drainer
     count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
@@ -189,7 +191,7 @@ secretGenerator:
 resources:
   - ../../../../base/swpt-accounts/shard/
   - postgres-cluster.yaml
-  - ../../../../base/swpt-accounts/shard/splitting-phase-1-job.yaml
+  - ../../../../base/swpt-accounts/shard/splitting-phase-2-job.yaml
 patches:
   - path: ../../../../base/swpt-accounts/shard/patches/postgres-cluster.yaml
     target:
