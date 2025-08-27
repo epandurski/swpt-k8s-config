@@ -96,7 +96,7 @@ replicas:
     count: 0
   - name: trade-worker-transfers-triggerer
     count: 0
-  - name: turn-roller
+  - name: trade-worker-turn-roller
     count: 0
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
