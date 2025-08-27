@@ -115,8 +115,6 @@ replicas:
     count: 0
   - name: trade-worker-turn-roller
     count: 0
-  - name: trade-worker-messages-drainer
-    count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
     files:
@@ -157,7 +155,7 @@ secretGenerator:
 resources:
   - ../../../../../base/swpt-creditors/trade/worker/
   - postgres-cluster.yaml
-  - ../../../../../base/swpt-creditors/trade/worker/splitting-phase-2-job.yaml
+  - ../../../../../base/swpt-creditors/trade/worker/splitting-phase-3-job.yaml
 patches:
   - path: ../../../../../base/swpt-creditors/trade/worker/patches/postgres-cluster.yaml
     target:

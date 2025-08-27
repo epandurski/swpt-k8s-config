@@ -89,15 +89,13 @@ configMapGenerator:
 #
 replicas:
   - name: trade-worker-messages-flusher
-    count: 0
+    count: 1
   - name: trade-worker-messages-consumer
-    count: 0
+    count: 1
   - name: trade-worker-http-fetcher
-    count: 0
+    count: 1
   - name: trade-worker-transfers-triggerer
-    count: 0
-  - name: trade-worker-turn-roller
-    count: 0
+    count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
     files:
