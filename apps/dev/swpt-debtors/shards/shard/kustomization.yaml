@@ -95,12 +95,14 @@ configMapGenerator:
 #
 replicas:
   - name: web-server
-    count: 1
+    count: 0
   - name: messages-flusher
-    count: 1
+    count: 0
   - name: messages-consumer
-    count: 1
+    count: 0
   - name: tasks-processor
+    count: 0
+  - name: messages-drainer
     count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
@@ -142,7 +144,7 @@ secretGenerator:
 resources:
   - ../../../../base/swpt-debtors/shard/
   - postgres-cluster.yaml
-  - ../../../../base/swpt-debtors/shard/splitting-phase-1-job.yaml
+  - ../../../../base/swpt-debtors/shard/splitting-phase-2-job.yaml
 patches:
   - path: ../../../../base/swpt-debtors/shard/patches/postgres-cluster.yaml
     target:
