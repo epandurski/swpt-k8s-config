@@ -102,8 +102,6 @@ replicas:
     count: 0
   - name: tasks-processor
     count: 0
-  - name: messages-drainer
-    count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
     files:
@@ -144,7 +142,7 @@ secretGenerator:
 resources:
   - ../../../../base/swpt-debtors/shard/
   - postgres-cluster.yaml
-  - ../../../../base/swpt-debtors/shard/splitting-phase-2-job.yaml
+  - ../../../../base/swpt-debtors/shard/splitting-phase-3-job.yaml
 patches:
   - path: ../../../../base/swpt-debtors/shard/patches/postgres-cluster.yaml
     target:
