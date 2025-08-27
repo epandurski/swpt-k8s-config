@@ -7,5 +7,3 @@ labels:
       app.kubernetes.io/part-of: swpt-trade
 resources:
   - worker/
-  - worker-0/
-  - worker-1/
