@@ -33,7 +33,6 @@ configMapGenerator:
       - WEBSERVER_THREADS=3
       - FLUSH_PROCESSES=1
       - FLUSH_PERIOD=1.5
-      - DELETE_PARENT_SHARD_RECORDS=true
     options:
       annotations:
         # These annotations are used as sources for convenient Kustomize
@@ -73,23 +72,6 @@ configMapGenerator:
         # Do not change the next two lines!
         kustomize_zalando_top_level_domain: do
         kustomize_zalando_clone_timestamp: "2199-01-01T00:00:00.000+00:00"
-  - name: splitting-jobs-config
-    literals:
-      - SHARDS_APP=swpt-debtors-shard
-      - SHARDS_CRITICAL_WORKLOADS=
-      - SHARDS_COMPONENTS=web-server messages-consumer messages-flusher tasks-processor
-      - SHARDS_PREFIX=shard
-      - SHARDS_PG_CLUSTER_PREFIX=db
-      - SHARD_SUFFIX=
-      - SHARD0_SUFFIX=-0
-      - SHARD1_SUFFIX=-1
-      - SHARD_ROUTING_KEY=#
-      - SHARD0_ROUTING_KEY=0.#
-      - SHARD1_ROUTING_KEY=1.#
-      - APIPROXY_CONFIG=../../apiproxy.conf
-      - CONSUMER_TASK_NAME=messages-consumer
-      - DRAINER_TASK_NAME=messages-drainer
-      - SHARDS_SUBDIR=apps/dev/swpt-debtors/shards
 # The number of replicas for each component. One replica works fine,
 # but to have high-availability, should be at least 2.
 #
@@ -99,8 +81,6 @@ replicas:
   - name: messages-flusher
     count: 1
   - name: messages-consumer
-    count: 1
-  - name: tasks-processor
     count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
@@ -142,7 +122,6 @@ secretGenerator:
 resources:
   - ../../../../base/swpt-debtors/shard/
   - postgres-cluster.yaml
-  - ../../../../base/swpt-debtors/shard/splitting-phase-1-job.yaml
 patches:
   - path: ../../../../base/swpt-debtors/shard/patches/postgres-cluster.yaml
     target:
