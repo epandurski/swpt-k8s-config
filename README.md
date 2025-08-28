@@ -763,8 +763,8 @@ shown below:
 $ cd apps/dev/swpt-accounts/shards
 $ pwd
 /home/johndoe/src/swpt-k8s-config/apps/dev/swpt-accounts/shards
-$ ls
-kustomization.yaml  shard  split-shard
+$ ls -F
+kustomization.yaml  shard/  split-shard*
 
 $ ./split-shard shard
 ...
@@ -802,4 +802,13 @@ $ git commit -m "Trigger split of apps/dev/swpt-accounts/shards/shard"
  create mode 100644 apps/example/swpt-accounts/shards/shard/kustomization.unsplit
 
 $ git push k8s-repo master
+Enumerating objects: 8, done.
+Counting objects: 100% (8/8), done.
+Delta compression using up to 4 threads
+Compressing objects: 100% (4/4), done.
+Writing objects: 100% (5/5), 3.93 KiB | 1.31 MiB/s, done.
+Total 5 (delta 2), reused 0 (delta 0), pack-reused 0
+remote: Resolving deltas: 100% (2/2), completed with 2 local objects.
+To github.com:johndoe/swpt-k8s-config.git
+   c46b496..1c50aeb  master -> master
 ```
