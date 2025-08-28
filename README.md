@@ -746,11 +746,12 @@ to two, you need to split the existing shard into two child shards.
 The new shards will have the names `shard-0` and `shard-1`, and each
 will be responsible for half of the records previously belonging to
 the parent shard. (That is: `shard-0` will be responsible for the
-records which MD5-hash starts with binary `0`, and `shard-1` will be
-responsible for the records which MD5-hash starts with binary `1`.)
-When those children shards are again close to becoming overloaded, you
-can again split each of them into two, resulting in four shards in
-total (`shard-00`, `shard-01`, `shard-10`, and `shard-11`).
+records whose MD5-hash's first bit is 0, and `shard-1` will be
+responsible for the records whose MD5-hash's first bit is 1.) When
+those children shards are again close to becoming overloaded, you can
+again split each of them into two, resulting in four shards in total
+(`shard-00`, `shard-01`, `shard-10`, and `shard-11`). You can continue
+scaling by recursively splitting existing shards as needed.
 
 The process of shard splitting is completely automated, but must be
 triggered manually. To trigger a shard split, navigate to the `shards`
