@@ -170,6 +170,15 @@ secretGenerator:
       app.kubernetes.io/name: swpt-creditors
   type: Opaque
 
+- name: git-ops-ssh-id
+  files:
+  - id_rsa=../swpt-nfs-server/secrets/id_rsa.encrypted
+  - id_rsa.pub=../swpt-nfs-server/secrets/id_rsa.pub
+  - id_rsa-cert.pub=../swpt-nfs-server/secrets/id_rsa-cert.pub
+  options:
+    disableNameSuffixHash: true
+  type: Opaque
+
 - name: regcreds
   files:
   - ".dockerconfigjson=../regcreds.json.encrypted"
@@ -365,6 +374,14 @@ configMapGenerator:
       kustomize_apiproxy_memory_request: 24Mi
       kustomize_apiproxy_memory_limit: 1Gi
 
+- name: git-ops-config
+  literals:
+  - GIT_SERVER=git-server.simple-git-server.svc.cluster.local
+  - GIT_PORT=2222
+  - GIT_REPOSITORY_PATH=/srv/git/fluxcd.git
+  options:
+    disableNameSuffixHash: true
+
 # The number of replicas for each component. One replica works fine,
 # but to have high-availability, should be at least 2.
 #
@@ -387,10 +404,10 @@ replicas:
 images:
 - name: swpt-creditors
   newName: ghcr.io/swaptacular/swpt_creditors
-  digest: sha256:b241c061a102468771b18b94aefd43ad04c3c8960a67b2fe562ff879e6b5016a
+  digest: sha256:009e5c5fc5346584d681a7dc19f9e10b5a78eeecdc789dcae86e5b141dae5348
 - name: swpt-creditors-swagger-ui
   newName: ghcr.io/swaptacular/swpt_creditors_swagger_ui
-  digest: sha256:2789e49baa8ea5757423748748566977b06b92a054707735104873e1484dff2d
+  digest: sha256:c704b74d89c58d0b88f8e8b8bf1abf15824ca4db98f6e18c992635da6470a9ee
 - name: swpt-creditors-ui
   newName: ghcr.io/swaptacular/swpt_creditors_ui
   digest: sha256:31ed252b9db16ffa37e81527137880b5e5d10d3ced246519fa3d077995e78f67
@@ -399,7 +416,7 @@ images:
   digest: sha256:7a396d200c4c023f5cf46a3dc45d202917df4ef184e33580c3177a70c4a3675b
 - name: swpt-stomp
   newName: ghcr.io/swaptacular/swpt_stomp
-  digest: sha256:9ca8d559eb5482e85593df07edacea1268aa6881878609e03778f8bfc4c7cd93
+  digest: sha256:393fc048dad43fa95587de8d0f486a73427f8077fb0ad147c94c9dc3018ee7e3
 - name: swpt-nfs-server
   newName: ghcr.io/swaptacular/swpt_nfs_server
   digest: sha256:f3674f3a027e961d6c4be308094e1ec129859fda1aafac85e5920edb0c9bdb7f
@@ -412,6 +429,9 @@ images:
 - name: nginx
   newName: ghcr.io/swaptacular/nginx
   digest: sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+- name: swpt-split-shard
+  newName: ghcr.io/swaptacular/swpt_split_shard
+  digest: sha256:0bf2a6820051d12cc72a8d4a46d2e5835cdbdfcc7c7fce13d2ffee59ddb93957
 
 patches:
 # This patch configures the ingress-nginx controller.
