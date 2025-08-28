@@ -733,8 +733,9 @@ the cluster.
 
 As the number of users grows, you may need to increase the number of
 running deployment replicas, processes, and threads of the various
-components, by editing the relevant `kustomization.yaml` files. While
-increasing replicas, processes, or threads can help with compute
+components, by editing the relevant `kustomization.yaml`,
+`broker.yaml`, `postgres-cluster.yaml`, and `dragonfly-db.yaml` files.
+While increasing replicas, processes, or threads can help with compute
 scalability, eventually the database itself becomes a bottleneck,
 necessitating horizontal scaling through sharding.
 
