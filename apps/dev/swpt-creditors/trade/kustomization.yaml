@@ -5,11 +5,11 @@ configMapGenerator:
 - name: swpt-trade-config
   literals:
   # Determiene when new trading turns will be started.
-  - TURN_PERIOD=1d
-  - TURN_PERIOD_OFFSET=2h
-  - TURN_PHASE1_DURATION=10m
-  - TURN_PHASE2_DURATION=1h
-  - TURN_CHECK_INTERVAL=60s
+  - TURN_PERIOD=20m
+  - TURN_PERIOD_OFFSET=0
+  - TURN_PHASE1_DURATION=2m
+  - TURN_PHASE2_DURATION=10m
+  - TURN_CHECK_INTERVAL=5s
 
   # In order to be traded, currencies must be pegged to other
   # currencies, thus forming a "peg-tree". At the root of the peg-tree
