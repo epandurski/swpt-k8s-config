@@ -6,7 +6,6 @@ labels:
       app.kubernetes.io/name: swpt-accounts-shard
       app.kubernetes.io/part-of: swpt-accounts
 resources:
-  - shard-0/
   - shard-10/
   - shard-11/
   - shard-00/

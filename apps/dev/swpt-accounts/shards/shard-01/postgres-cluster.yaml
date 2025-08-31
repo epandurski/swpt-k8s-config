@@ -1,6 +1,3 @@
-# This file is currently owned by the shard-splitting job. DO NOT EDIT!
-# Date: Sun Aug 31 12:44:03 PM EEST 2025
-#
 apiVersion: "acid.zalan.do/v1"
 kind: postgresql
 metadata:
