@@ -9,3 +9,5 @@ resources:
   - shard-0/
   - shard-10/
   - shard-11/
+  - shard-00/
+  - shard-01/

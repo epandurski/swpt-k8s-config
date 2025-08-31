@@ -6,7 +6,7 @@ kind: Kustomization
 # This must be either an empty string, or a string starting with '-',
 # and followed by 0s or 1s. "-101" for example.
 #
-nameSuffix: "-0"
+nameSuffix: "-01"
 labels:
   - includeSelectors: true
     pairs:
@@ -15,7 +15,7 @@ labels:
       # label must be "shard-101". If "nameSuffix" is "", the value for
       # the label must be "shard".
       #
-      app.kubernetes.io/instance: shard-0
+      app.kubernetes.io/instance: shard-01
 configMapGenerator:
   - name: shardconfig
     literals:
@@ -23,7 +23,7 @@ configMapGenerator:
       # example, if "nameSuffix" is "-101", the routing key must be
       # "1.0.1.#". If "nameSuffix" is "", the routing key must be "#".
       #
-      - PROTOCOL_BROKER_QUEUE_ROUTING_KEY=0.#
+      - PROTOCOL_BROKER_QUEUE_ROUTING_KEY=0.1.#
       # Shard configuration settings which you may want to change:
       #
       - PROTOCOL_BROKER_PROCESSES=1
@@ -116,23 +116,6 @@ configMapGenerator:
     files:
       - nginx.conf=../../../../base/swpt-accounts/shard/static/nginx.conf
       - default.conf.template=../../../../base/swpt-accounts/shard/static/default.conf.template
-  - name: splitting-jobs-config
-    literals:
-      - SHARDS_APP=swpt-accounts-shard
-      - SHARDS_CRITICAL_WORKLOADS=http-cache web-server
-      - SHARDS_COMPONENTS=chores-consumer messages-consumer messages-flusher tasks-processor
-      - SHARDS_PREFIX=shard
-      - SHARDS_PG_CLUSTER_PREFIX=db
-      - SHARD_SUFFIX=-0
-      - SHARD0_SUFFIX=-00
-      - SHARD1_SUFFIX=-01
-      - SHARD_ROUTING_KEY=0.#
-      - SHARD0_ROUTING_KEY=0.0.#
-      - SHARD1_ROUTING_KEY=0.1.#
-      - APIPROXY_CONFIG=../../apiproxy.conf
-      - CONSUMER_TASK_NAME=messages-consumer
-      - DRAINER_TASK_NAME=messages-drainer
-      - SHARDS_SUBDIR=apps/dev/swpt-accounts/shards
 # The number of replicas for each component. One replica works fine,
 # but to have high-availability, should be at least 2.
 #
@@ -140,15 +123,15 @@ replicas:
   - name: web-server
     count: 1
   - name: messages-flusher
-    count: 1
+    count: 0
   - name: messages-consumer
-    count: 1
+    count: 0
   - name: chores-consumer
-    count: 1
+    count: 0
   - name: http-cache
     count: 1
   - name: tasks-processor
-    count: 1
+    count: 0
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
     files:
@@ -189,7 +172,6 @@ secretGenerator:
 resources:
   - ../../../../base/swpt-accounts/shard/
   - postgres-cluster.yaml
-  - ../../../../base/swpt-accounts/shard/splitting-phase-1-job.yaml
 patches:
   - path: ../../../../base/swpt-accounts/shard/patches/postgres-cluster.yaml
     target:
