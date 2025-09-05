@@ -196,11 +196,13 @@ Kubernetes cluster:
 
 You can run more than one Swaptacluar node type in the same Kubernetes
 cluster. You can even run multiple instances of the same node type,
-but then you need to make sure that the name of each node's
-subdirectory is unique. In this example, we will presume that you want
-to run an accounting authority node, but the only difference in the
-name of the subdirectory (`swpt-accounts`, `swpt-debtors`, or
-`swpt-creditors`).
+but in this case you would need to make sure that the name of each
+node's subdirectory is unique.
+
+In this example, we will presume that you want to run an accounting
+authority node, but if you want to run a different type of node, the
+only difference would be in the name of the subdirectory that you need
+to copy (`swpt-accounts`, `swpt-debtors`, or `swpt-creditors`).
 
 **Note:** In production, you will not need the `mailhog.yaml`,
 `minio.yaml`, and `pebble.yaml` files in the `clusters/example/`
@@ -330,113 +332,121 @@ immediately.
 ## Install a simple Git server in your Kubernetes cluster
 
 The next step is to install a Git server in your Kubernetes cluster,
-which will host a copy of your GitOps repository. Before doing this,
-you need to add the root-CA public key for each of your Swaptacular
-nodes, to the `simple-git-server/trusted_user_ca_keys` file:
+which will host a copy of your GitOps repository. But before doing
+this, you need to do some preparations:
 
-``` console
-$ pwd
-/home/johndoe/src/swpt-k8s-config
+1. You need to add the root-CA public key for each (or at least one)
+   of your Swaptacular nodes, to the
+   `simple-git-server/trusted_user_ca_keys` file:
 
-$ cp simple-git-server/static/trusted_user_ca_keys simple-git-server/
-$ ls -F apps/dev/swpt-accounts/node-data/  # See https://github.com/swaptacular/swpt_ca_scripts
-certs/                generate-serverkey*  private/           root-ca.conf.template
-create-infobundle*    init-ca*             README.md          root-ca.crt
-creditors-subnet.txt  my-infobundle.zip    reconfigure-peer*  sign-peercert*
-db/                   nodeinfo/            register-peer*     sign-servercert*
-generate-masterkey*   peers/               root-ca.conf
+   **Note:** To generate a root-CA public key for you node, you must
+   use the scripts in the `node-data` subdirectory, and [follow these
+   instructions ](https://github.com/swaptacular/swpt_ca_scripts). In
+   this example, we presume that you have done this already.
 
-$ export ROOT_CA_CRT_FILE=apps/dev/swpt-accounts/node-data/root-ca.crt  # the path to your Swaptacular node's self-signed root-CA certificate
-$ openssl x509 -in "$ROOT_CA_CRT_FILE" -pubkey -noout > CERT.tmp
-$ ssh-keygen -f CERT.tmp -i -m PKCS8 >> simple-git-server/trusted_user_ca_keys
-$ rm CERT.tmp
-$ cat simple-git-server/trusted_user_ca_keys  # Shows the trusted root-CA keys, one key per line.
-...
-...
-ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCJfDWvw+LxOW1ECcpoHdFw+ygG4XSeVrB9JFVdIcrrVHqIXDPjvJKXrQ2TadeaTA2i1XUv+XwJr2ZN3OZ6dGLxddPQD4ZG6ciT4iK4TOjAiauE8gQPHR1uzShoK2TGfuYXma2lOnB4s/w5Tif+an5NzHRuDzAwXHPVfVeb9kgIO4A761CztwdTPyEM0jocpoz03Ch4DgYvwf2r+P+1x2Hm5htipNigkhdwtdw5yjUuTR3ylFIeokwcIZomYcGGO66i7EWGYzhr811uApgLJH5YtqeFnD054ia+AbOdCXEr1ZXvpol1Vqo6p/R015zBjMQ8wcdzd+PMSzHvXMLMjG6POhRvQ2yy3cmDpPPIzMHOcNxXhdarVLKDt8/SJlo4O+buAbHdib0pRXpqbPS6rjFwArB93H7TOcY+xl3EGAsjz+1wRPlbi1TN9XNRyQKxLK21QpYql4iYoD8Wac6iWQDDKNaTr88YFUu+MMUfZuQ+0MmXQ1yA/wfqyC9pjm4tkc0=
-```
+   ``` console
+   $ pwd
+   /home/johndoe/src/swpt-k8s-config
 
-You also need to choose the passwords for accessing the Alertmanager
-and Prometheus UIs (view-only):
+   $ cp simple-git-server/static/trusted_user_ca_keys simple-git-server/
+   $ ls -F apps/dev/swpt-accounts/node-data/  # See https://github.com/swaptacular/swpt_ca_scripts
+   certs/                generate-serverkey*  private/           root-ca.conf.template
+   create-infobundle*    init-ca*             README.md          root-ca.crt
+   creditors-subnet.txt  my-infobundle.zip    reconfigure-peer*  sign-peercert*
+   db/                   nodeinfo/            register-peer*     sign-servercert*
+   generate-masterkey*   peers/               root-ca.conf
 
-``` console
-$ cd simple-git-server/
-$ pwd
-/home/johndoe/src/swpt-k8s-config/simple-git-server
+   $ export ROOT_CA_CRT_FILE=apps/dev/swpt-accounts/node-data/root-ca.crt  # the path to your Swaptacular node's self-signed root-CA certificate
+   $ openssl x509 -in "$ROOT_CA_CRT_FILE" -pubkey -noout > CERT.tmp
+   $ ssh-keygen -f CERT.tmp -i -m PKCS8 >> simple-git-server/trusted_user_ca_keys
+   $ rm CERT.tmp
+   $ cat simple-git-server/trusted_user_ca_keys  # Shows the trusted root-CA keys, one key per line.
+   ...
+   ...
+   ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABgQCJfDWvw+LxOW1ECcpoHdFw+ygG4XSeVrB9JFVdIcrrVHqIXDPjvJKXrQ2TadeaTA2i1XUv+XwJr2ZN3OZ6dGLxddPQD4ZG6ciT4iK4TOjAiauE8gQPHR1uzShoK2TGfuYXma2lOnB4s/w5Tif+an5NzHRuDzAwXHPVfVeb9kgIO4A761CztwdTPyEM0jocpoz03Ch4DgYvwf2r+P+1x2Hm5htipNigkhdwtdw5yjUuTR3ylFIeokwcIZomYcGGO66i7EWGYzhr811uApgLJH5YtqeFnD054ia+AbOdCXEr1ZXvpol1Vqo6p/R015zBjMQ8wcdzd+PMSzHvXMLMjG6POhRvQ2yy3cmDpPPIzMHOcNxXhdarVLKDt8/SJlo4O+buAbHdib0pRXpqbPS6rjFwArB93H7TOcY+xl3EGAsjz+1wRPlbi1TN9XNRyQKxLK21QpYql4iYoD8Wac6iWQDDKNaTr88YFUu+MMUfZuQ+0MmXQ1yA/wfqyC9pjm4tkc0=
+   ```
 
-$ echo "viewer:$(openssl passwd)" > secret-files/alertmanager_viewers
-Password: <enter your chosen password>
-Verifying - Password: <enter your chosen password again>
+2. You need to choose the passwords for accessing the Alertmanager and
+   Prometheus UIs (a view-only access):
 
-$ cat secret-files/alertmanager_viewers  # Shows Alertmanager's viewers usernames and encrypted passwords, one viewer per line.
-viewer:$1$2gwQXkVy$An9E0C66KIGsgQ/KhPWoD.
+   ``` console
+   $ cd simple-git-server/
+   $ pwd
+   /home/johndoe/src/swpt-k8s-config/simple-git-server
 
-$ echo "viewer:$(openssl passwd)" > secret-files/prometheus_viewers
-Password: <enter your chosen password>
-Verifying - Password: <enter your chosen password again>
+   $ echo "viewer:$(openssl passwd)" > secret-files/alertmanager_viewers
+   Password: <enter your chosen password>
+   Verifying - Password: <enter your chosen password again>
 
-$ cat secret-files/prometheus_viewers  # Shows Prometheus's viewers usernames and encrypted passwords, one viewer per line.
-viewer:$1$2gwQXkVy$An9E0C66KIGsgQ/KhPWoD.
-```
+   $ cat secret-files/alertmanager_viewers  # Shows Alertmanager's viewers usernames and encrypted passwords, one viewer per line.
+   viewer:$1$2gwQXkVy$An9E0C66KIGsgQ/KhPWoD.
 
-Then, you need to run a simple script which will automatically
-generate some secrets:
+   $ echo "viewer:$(openssl passwd)" > secret-files/prometheus_viewers
+   Password: <enter your chosen password>
+   Verifying - Password: <enter your chosen password again>
 
-**Note**: You will be prompted to enter information for a self-signed
-SSL certificate. This certificate will be used by the Nginx reverse
-proxy providing access to the Alertmanager and Prometheus UIs. You may
-enter any values you like, including pressing “Enter” multiple times
-to skip fields.
+   $ cat secret-files/prometheus_viewers  # Shows Prometheus's viewers usernames and encrypted passwords, one viewer per line.
+   viewer:$1$2gwQXkVy$An9E0C66KIGsgQ/KhPWoD.
+   ```
 
-``` console
-$ pwd
-/home/johndoe/src/swpt-k8s-config/simple-git-server
+3. Then, you need to run a simple script which will automatically
+   generate some secrets:
 
-$ ./generate-secret-files.sh
-Generating public/private rsa key pair.
-Your identification has been saved in secret-files/ssh_host_rsa_key
-Your public key has been saved in secret-files/ssh_host_rsa_key.pub
-The key fingerprint is:
-SHA256:V5z4od4LmSBF3MyXsTzPBjt+yYOKLJQqrZS2ULerNyM johndoe@mycomputer
-The key's randomart image is:
-+---[RSA 3072]----+
-|+oo+=o...o=.    =|
-| + oo+o .. + o *o|
-|. . ..+.  E + O +|
-|   .   + o   = *o|
-|      . S + + . =|
-|         o + . + |
-|            o . .|
-|             =   |
-|              o  |
-+----[SHA256]-----+
-........+...+..+.+..+...+....+.........+..+.......+........++++++++++++
-...
-...
------
-You are about to be asked to enter information that will be incorporated
-into your certificate request.
-What you are about to enter is what is called a Distinguished Name or a DN.
-There are quite a few fields but you can leave some blank
-For some fields there will be a default value,
-If you enter '.', the field will be left blank.
------
-Country Name (2 letter code) [AU]:
-State or Province Name (full name) [Some-State]:
-Locality Name (eg, city) []:
-Organization Name (eg, company) [Internet Widgits Pty Ltd]:
-Organizational Unit Name (eg, section) []:
-Common Name (e.g. server FQDN or YOUR name) []:
-Email Address []:
+   **Note**: You will be prompted to enter information for a
+   self-signed SSL certificate. This certificate will be used by the
+   Nginx reverse proxy providing access to the Alertmanager and
+   Prometheus UIs. You may enter any values you like, including
+   pressing “Enter” multiple times to skip fields.
 
-****************************************************************
-* IMPORTANT: Do not forget to run the "delete-secret-files.sh" *
-* script once you have successfully bootstrapped your          *
-* Kubernetes cluster!                                          *
-****************************************************************
-```
+   ``` console
+   $ pwd
+   /home/johndoe/src/swpt-k8s-config/simple-git-server
 
-After completing all the preparations, you can install a simple Git
+   $ ./generate-secret-files.sh
+   Generating public/private rsa key pair.
+   Your identification has been saved in secret-files/ssh_host_rsa_key
+   Your public key has been saved in secret-files/ssh_host_rsa_key.pub
+   The key fingerprint is:
+   SHA256:V5z4od4LmSBF3MyXsTzPBjt+yYOKLJQqrZS2ULerNyM johndoe@mycomputer
+   The key's randomart image is:
+   +---[RSA 3072]----+
+   |+oo+=o...o=.    =|
+   | + oo+o .. + o *o|
+   |. . ..+.  E + O +|
+   |   .   + o   = *o|
+   |      . S + + . =|
+   |         o + . + |
+   |            o . .|
+   |             =   |
+   |              o  |
+   +----[SHA256]-----+
+   ........+...+..+.+..+...+....+.........+..+.......+........++++++++++++
+   ...
+   ...
+   -----
+   You are about to be asked to enter information that will be incorporated
+   into your certificate request.
+   What you are about to enter is what is called a Distinguished Name or a DN.
+   There are quite a few fields but you can leave some blank
+   For some fields there will be a default value,
+   If you enter '.', the field will be left blank.
+   -----
+   Country Name (2 letter code) [AU]:
+   State or Province Name (full name) [Some-State]:
+   Locality Name (eg, city) []:
+   Organization Name (eg, company) [Internet Widgits Pty Ltd]:
+   Organizational Unit Name (eg, section) []:
+   Common Name (e.g. server FQDN or YOUR name) []:
+   Email Address []:
+
+   ****************************************************************
+   * IMPORTANT: Do not forget to run the "delete-secret-files.sh" *
+   * script once you have successfully bootstrapped your          *
+   * Kubernetes cluster!                                          *
+   ****************************************************************
+   ```
+
+After completing all the preparations, you can finally install the Git
 server in your Kubernetes cluster:
 
 ``` console
@@ -470,7 +480,9 @@ replicaset.apps/simple-git-server-5d86d687d8   1         1         1       24h
 
 **Note:** The last command displays the public IP address of the load
 balancer for the newly installed Git server (`172.18.0.4` in this
-example).
+example). You can also access Alertmanager and Prometheus UIs at this
+IP address (at `https://172.18.0.4/alertmanager/` and
+`https://172.18.0.4/prometheus/`).
 
 ## Copy the GitOps repository to the newly installed Git server
 
@@ -499,7 +511,8 @@ Then, you need to connect to the Git server, create a new
 GitOps repo into it:
 
 **Important note:** You need to obtain the public IP address of the
-Git server's load balancer in your Kubernetes cluster.
+Git server's load balancer in your Kubernetes cluster (`172.18.0.4` in
+this example).
 
 ``` console
 $ pwd
