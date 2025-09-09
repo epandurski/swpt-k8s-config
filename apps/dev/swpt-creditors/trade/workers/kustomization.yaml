@@ -8,3 +8,5 @@ labels:
 resources:
   - worker-0/
   - worker-1/
+  - worker-10/
+  - worker-11/

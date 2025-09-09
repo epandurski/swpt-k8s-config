@@ -79,23 +79,6 @@ configMapGenerator:
         # Do not change the next two lines!
         kustomize_zalando_top_level_domain: do
         kustomize_zalando_clone_timestamp: "2199-01-01T00:00:00.000+00:00"
-  - name: splitting-jobs-config
-    literals:
-      - SHARDS_APP=swpt-trade-worker
-      - SHARDS_CRITICAL_WORKLOADS=
-      - SHARDS_COMPONENTS=http-fetcher messages-consumer messages-flusher transfers-triggerer turn-roller
-      - SHARDS_PREFIX=worker
-      - SHARDS_PG_CLUSTER_PREFIX=trade-worker-db
-      - SHARD_SUFFIX=-1
-      - SHARD0_SUFFIX=-10
-      - SHARD1_SUFFIX=-11
-      - SHARD_ROUTING_KEY=1.#
-      - SHARD0_ROUTING_KEY=1.0.#
-      - SHARD1_ROUTING_KEY=1.1.#
-      - APIPROXY_CONFIG=
-      - CONSUMER_TASK_NAME=trade-worker-messages-consumer
-      - DRAINER_TASK_NAME=trade-worker-messages-drainer
-      - SHARDS_SUBDIR=apps/dev/swpt-creditors/trade/workers
 # The number of replicas for each component. One replica works fine,
 # but to have high-availability, should be at least 2.
 replicas:
@@ -106,8 +89,6 @@ replicas:
   - name: trade-worker-http-fetcher
     count: 1
   - name: trade-worker-transfers-triggerer
-    count: 1
-  - name: trade-worker-turn-roller
     count: 1
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
@@ -149,7 +130,6 @@ secretGenerator:
 resources:
   - ../../../../../base/swpt-creditors/trade/worker/
   - postgres-cluster.yaml
-  - ../../../../../base/swpt-creditors/trade/worker/splitting-phase-1-job.yaml
 patches:
   - path: ../../../../../base/swpt-creditors/trade/worker/patches/postgres-cluster.yaml
     target:
