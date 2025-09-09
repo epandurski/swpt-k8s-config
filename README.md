@@ -190,16 +190,17 @@ Also, note that the numerous
 `secrets/` subdirectories contain example encrypted secrets, which you
 can not use. Instead of trying to use the example secrets, you should
 generate and encrypt your own secrets. The same applies to the files
-`server.crt` and `server.key.encrypted`. Another very important
-directory is the `node-data/` subdirectory
+`server.crt` and `server.key.encrypted`.
+
+Another very important directory is the `node-data/` subdirectory
 (`apps/dev/swpt-debtors/node-data/`,
 `apps/dev/swpt-creditors/node-data/`, and
 `apps/dev/swpt-accounts/node-data/`). This subdirectory contains
 information about the Swaptacular node and its peers. The `node-data/`
-subdirectory should start as an identical copy of the [Swaptacular
+subdirectory starts as an identical copy of the [Swaptacular
 certificate authority scripts
 repository](https://github.com/swaptacular/swpt_ca_scripts), and
-continue evolving from there.
+continues evolving from there.
 
 You should always include a copy of the
 `apps/example/regcreds.json.encrypted` file, and the
@@ -232,16 +233,17 @@ to preserve (`swpt-accounts`, `swpt-debtors`, or `swpt-creditors`):
 $ pwd
 /home/johndoe/src/swpt-k8s-config
 
-$ rm -rf apps/$CLUSTER_NAME/swpt-debtors
-$ rm -rf apps/$CLUSTER_NAME/swpt-creditors
+$ rm -rf apps/$CLUSTER_NAME/swpt-debtors  # Do not run a debtors agent node.
+$ rm -rf apps/$CLUSTER_NAME/swpt-creditors  # Do not run a creditors agent node.
 ```
 
-**Note:** In production, you will also not need the `mailhog.yaml`,
+**Note:** In production, you also will not need the `mailhog.yaml`,
 `minio.yaml`, and `pebble.yaml` files in the `clusters/example/`
 directory. They are useful only for testing.
 
-Once you have sorted all this out, commit and push your changes to the
-GitOps repository:
+Once you have sorted all this out (Remember, **you must pay close
+attention** to the comments in the various `.yaml` files!), commit and
+push your changes to the GitOps repository:
 
 ``` console
 $ pwd
@@ -632,6 +634,11 @@ Fast-forward
  1 file changed, 2 insertions(+)
 ```
 
+**Note:** When deploying a non-production cluster, you may choose to
+simplify your workflow by using an external GitOps server (less
+secure) instead of the Git server installed on the cluster. In that
+case, you must change the `flux bootstrap` command accordingly.
+
 ## Wait for the cluster to start the pods
 
 This process will take some time. You can use `kubectl` to monitor the
@@ -711,9 +718,10 @@ gpg:  secret keys unchanged: 1
 
 ## Delete the unencrypted secrets from your machine (optional)
 
-It is **strongly recommended** that you delete the unencrypted secrets
-from the `simple-git-server/secret-files` directory on your machine.
-To do so, run the following command:
+Once you have successfully bootstrapped your Kubernetes cluster, it is
+**strongly recommended** that you delete the unencrypted secrets from
+the `simple-git-server/secret-files` directory on your machine. To do
+so, run the following command:
 
 ``` console
 $ cd simple-git-server
