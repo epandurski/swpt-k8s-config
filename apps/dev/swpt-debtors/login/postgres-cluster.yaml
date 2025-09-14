@@ -30,6 +30,12 @@ spec:
   #
   numberOfInstances: 1
 
+  tolerations:
+  - key: "swpt-login-db"
+    operator: "Equal"
+    value: "swpt-debtors"
+    effect: "NoSchedule"
+
   env:
   # You can change the value of this variable to trigger a restart of
   # the PosgreSQL cluster.

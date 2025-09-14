@@ -64,6 +64,12 @@ spec:
       cpu: 1000m
       memory: 350Mi
 
+  tolerations:
+  - key: "swpt-dragonfly-db"
+    operator: "Equal"
+    value: "swpt-debtors"
+    effect: "NoSchedule"
+
   annotations:
     # The value can be changed to force pods restart.
     #
