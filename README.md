@@ -1,12 +1,32 @@
 # Swaptacular GitOps repository for deploying to Kubernetes clusters
 
-**Note:** When deploying to a KinD (Kubernetes in Docker) cluster, you
-can use the `kind-cluster.yaml` configuration file. Also, you may need
-to run the following command:
+This repository serves as a template for deploying [Swaptacular nodes]
+to [Kubernetes] clusters. It follows the [GitOps] paradigm, and aims
+to make deploying Swaptacular nodes as simple as possible. The
+resulting deployments are designed to:
 
-``` console
-$ sudo sysctl fs.inotify.max_user_instances=8192
-```
+  * Work on any standards-compliant Kubernetes cluster.
+
+  * Be highly available and horizontally scalable.
+
+  * Perform automatic database backups.
+
+  * Provide cluster monitoring and log aggregation.
+
+  * Require zero or near-zero administration.
+
+  * Minimize external dependencies, which are limited to:
+    - an [OCI image repository] for downloading Docker images;
+    - an [Amazon S3]-compatible service for database backups;
+    - an [SMTP server] for sending emails;
+    - a [CAPTCHA] service for sign-in and sign-up.
+
+    By default, [hCaptcha] is used, but the integration is generic and
+    can easily support other CAPTCHA services, including custom
+    implementations.
+
+The rest of this file provides **step-by-step instructions** for
+deploying one or more Swaptacular nodes to a Kubernetes cluster:
 
 ## Fork and clone this repository
 
@@ -35,11 +55,18 @@ $ export CLUSTER_DIR=clusters/$CLUSTER_NAME
 $ export GIT_INSTALL_DIR=simple-git-server/$CLUSTER_NAME
 ```
 
+**Note:** When deploying to a [KinD] (Kubernetes in Docker) cluster,
+you can use the provided `kind-cluster.yaml` configuration file. Also,
+you may need to run the following command:
+
+``` console
+$ sudo sysctl fs.inotify.max_user_instances=8192
+```
+
 ## Generate the cluster's PGP keys and configure SOPS
 
-The next task is to configure secrets management using
-[SOPS](https://github.com/getsops/sops) and
-[GnuPG/PGP](https://www.gnupg.org/):
+The next task is to configure secrets management using [SOPS] and
+[GnuPG/PGP]:
 
 ``` console
 $ pwd
@@ -232,13 +259,11 @@ only those which are responsible for running the types of Swaptacular
 nodes that you want to run in your Kubernetes cluster:
 
   * `apps/example/swpt-accounts/` is responsible for running an
-    [accounting authority
-    node](https://github.com/swaptacular/swpt_accounts).
+    [accounting authority node].
   * `apps/example/swpt-debtors/` is responsible for running a [debtors
-    agent node](https://github.com/swaptacular/swpt_debtors).
+    agent node].
   * `apps/example/swpt-creditors/` is responsible for running a
-    [creditors agent
-    node](https://github.com/swaptacular/swpt_creditors).
+    [creditors agent node].
 
 You can run more than one Swaptacluar node type in the same Kubernetes
 cluster. You can even run multiple instances of the same node type,
@@ -542,12 +567,12 @@ replicaset.apps/simple-git-server-5d86d687d8   1         1         1       24h
 ```
 
 The last command displays the public (external) IP address of the load
-balancer for the newly installed Git server (`172.18.0.4:2222` in this
-example). Later, you will be able to access the Grafana, Alertmanager
-and Prometheus UIs at this IP address (`https://172.18.0.4/` for
-Grafana, `https://172.18.0.4/alertmanager/` and
-`https://172.18.0.4/prometheus/` for Alertmanager and Prometheus UIs
-respectively).
+balancer for the newly installed Git server (`172.18.0.4`, port 2222,
+in this example). Later, you will be able to access the Grafana,
+Alertmanager and Prometheus UIs at this IP address
+(`https://172.18.0.4/` for Grafana, `https://172.18.0.4/alertmanager/`
+and `https://172.18.0.4/prometheus/` for Alertmanager and Prometheus
+UIs respectively).
 
 You should **save this IP address**, because you will need it soon:
 
@@ -625,8 +650,8 @@ To ssh://172.18.0.4:2222/srv/git/fluxcd.git
 
 ## Bootstrap FluxCD
 
-The next step is to bootstrap [FluxCD](https://fluxcd.io/) from the
-Git server installed in your Kubernetes cluster.
+The next step is to bootstrap [FluxCD] from the Git server installed
+in your Kubernetes cluster.
 
 If you want to use a private container image registry for the FluxCD
 images, you will need to specify your private registry using the
@@ -915,12 +940,30 @@ or two.
 ## Scaling up Ory Hydra
 
 Another database that may eventually need to be split into shards is
-the one used by [Ory Hydra](https://www.ory.sh/hydra). Currently, in
-the name of simplicity, it uses a standard
-[PostgreSQL](https://www.postgresql.org/) database. However, because
-losing the data in this database would not be catastrophic, and since
-Ory Hydra supports databases specifically designed to scale, you could
-relatively easily switch to
-[CockroachDB](https://www.cockroachlabs.com/),
-[YugabyteDB](https://www.yugabyte.com/) or
-[Citus](https://www.citusdata.com/).
+the one used by [Ory Hydra]. Currently, in the name of simplicity, it
+uses a standard [PostgreSQL] database. However, because losing the
+data in this database **would not** be catastrophic, and since Ory
+Hydra supports databases specifically designed to scale, you could
+relatively easily switch to [CockroachDB], [YugabyteDB], or [Citus].
+
+
+[Swaptacular nodes]: https://swaptacular.github.io/overview
+[Kubernetes]: https://kubernetes.io/
+[GitOps]: https://www.redhat.com/en/topics/devops/what-is-gitops
+[KinD]: https://kind.sigs.k8s.io/
+[Amazon S3]: https://en.wikipedia.org/wiki/Amazon_S3
+[SMTP server]: https://en.wikipedia.org/wiki/Simple_Mail_Transfer_Protocol
+[OCI image repository]: https://opencontainers.org/
+[CAPTCHA]: https://en.wikipedia.org/wiki/CAPTCHA
+[hCaptcha]: https://www.hcaptcha.com/
+[SOPS]: https://github.com/getsops/sops
+[GnuPG/PGP]: https://www.gnupg.org/
+[FluxCD]: https://fluxcd.io/
+[Ory Hydra]: https://www.ory.sh/hydra
+[PostgreSQL]: https://www.postgresql.org/
+[CockroachDB]: https://www.cockroachlabs.com/
+[YugabyteDB]: https://www.yugabyte.com/
+[Citus]: https://www.citusdata.com/
+[accounting authority node]: https://github.com/swaptacular/swpt_accounts
+[debtors agent node]: https://github.com/swaptacular/swpt_debtors
+[creditors agent node]: https://github.com/swaptacular/swpt_creditors
