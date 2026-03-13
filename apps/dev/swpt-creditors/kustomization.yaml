@@ -247,6 +247,10 @@ configMapGenerator:
 
 - name: swpt-creditors-ui-config
   literals:
+  # Set this to the name of the site, as it is known to the users. It
+  # should be short, and start with a captital letter.
+  - SITE_TITLE=Swaptacular
+
   # Those are undocumented configuration settings. They may change
   # from version to version. Use these with caution!
   - SERVER_API_TIMEOUT=8000
