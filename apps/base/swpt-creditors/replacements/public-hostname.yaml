@@ -20,10 +20,4 @@ targets:
       name: ingress-rules
     fieldPaths:
       - spec.rules.*.host
-  - select:
-      group: networking.k8s.io
-      version: v1
-      kind: Ingress
-      name: ingress-rules
-    fieldPaths:
       - spec.tls.*.hosts.0
