@@ -58,6 +58,11 @@ spec:
                 configMapKeyRef:
                   name: creditors-agent-config
                   key: PUBLIC_HOSTNAME
+            - name: WEBAPP_HOSTNAME
+              valueFrom:
+                configMapKeyRef:
+                  name: creditors-agent-config
+                  key: WEBAPP_HOSTNAME
             - name: BASE_URL
               value: /creditors-webapp
             - name: SERVER_API_ENTRYPOINT
