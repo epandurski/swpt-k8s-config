@@ -1,0 +1,59 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: simple-git-server
+
+# You may edit the following lines to specify a different container
+# image repository. Also, it is recommended to specify an image digest
+# instead of an image tag.
+images:
+- name: rockstorm/git-server
+  newName: ghcr.io/swaptacular/git-server
+  digest: sha256:77a0476d8e63e32153c3b446c3c2739004558168dd92b83252d9a4aa0b49deaa
+- name: nginx
+  newName: ghcr.io/swaptacular/nginx
+  digest: sha256:65645c7bb6a0661892a8b03b89d0743208a18dd2f3f17a54ef4b76fb8e2f2a10
+
+# IMPORTANT NOTE: Once the secret-files/ directory has been removed,
+# if you want to execute `kubectl apply -k simple-git-server/$CLUSTER_NAME/`
+# again, you will have to comment out the following block:
+secretGenerator:
+- name: nginx-basic-auth
+  files:
+    - alertmanager=secret-files/alertmanager_viewers
+    - prometheus=secret-files/prometheus_viewers
+  options:
+    disableNameSuffixHash: true
+  type: Opaque
+- name: host-keys
+  files:
+    - secret-files/ssh_host_rsa_key.pub
+    - secret-files/ssh_host_rsa_key
+  options:
+    disableNameSuffixHash: true
+  type: Opaque
+- name: regcreds
+  files:
+    - ".dockerconfigjson=secret-files/regcreds.json"
+  options:
+    disableNameSuffixHash: true
+  type: kubernetes.io/dockerconfigjson
+- name: nginx-ssl-certificate
+  files:
+  - cert.pem=secret-files/cert.pem
+  - key.pem=secret-files/key.pem
+  options:
+    disableNameSuffixHash: true
+  type: Opaque
+
+configMapGenerator:
+- name: sshd-config
+  files:
+    - sshd_config=static/sshd_config
+    - trusted_user_ca_keys=static/trusted_user_ca_keys
+- name: nginx-config
+  files:
+  - nginx.conf=static/nginx.conf
+  - default.conf.template=static/default.conf.template
+
+resources:
+- manifests.yaml

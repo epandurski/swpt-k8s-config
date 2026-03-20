@@ -1,0 +1,180 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: simple-git-server
+  labels:
+    app.kubernetes.io/name: simple-git-server
+
+---
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: git-repositories
+spec:
+  accessModes:
+    - ReadWriteOncePod
+  resources:
+    requests:
+      storage: 1Gi
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: simple-git-server
+spec:
+  replicas: 1  # must be exactly 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: simple-git-server
+  template:
+    metadata:
+      labels:
+        app: simple-git-server
+    spec:
+      priorityClassName: system-cluster-critical
+      containers:
+        - image: rockstorm/git-server
+          name: git-server
+          ports:
+            - containerPort: 22
+          env:
+            - name: SSH_HOST_KEYS_PATH
+              value: "/tmp/host-keys"
+            - name: SSH_AUTHORIZED_KEYS_FILE
+              value: "/etc/ssh/authorized_keys"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - DAC_OVERRIDE
+              - NET_RAW
+              - MKNOD
+          resources:
+            limits:
+              cpu: "1"
+              memory: 1Gi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - mountPath: "/srv/git/"
+              name: git-repositories
+              readOnly: false
+            - name: sshd-config
+              mountPath: "/etc/ssh/sshd_config"
+              subPath: sshd_config
+            - name: sshd-config
+              mountPath: "/etc/ssh/trusted_user_ca_keys"
+              subPath: trusted_user_ca_keys
+            - name: host-keys
+              mountPath: "/etc/ssh/authorized_keys"
+              subPath: ssh_host_rsa_key.pub
+            - mountPath: "/tmp/host-keys/"
+              name: host-keys
+        - name: nginx
+          image: nginx
+          ports:
+            - name: https
+              containerPort: 443
+          env:
+            - name: GRAFANA_UPSTREAM_URL
+              value: "http://prometheus-grafana.monitoring.svc.cluster.local"
+            - name: ALERTMANAGER_UPSTREAM_URL
+              value: "http://prometheus-kube-prometheus-alertmanager.monitoring.svc.cluster.local:9093"
+            - name: PROMETHEUS_UPSTREAM_URL
+              value: "http://prometheus-kube-prometheus-prometheus.monitoring.svc.cluster.local:9090"
+            - name: NGINX_ENTRYPOINT_QUIET_LOGS
+              value: "1"
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+              - DAC_OVERRIDE
+              - NET_RAW
+              - MKNOD
+              - SYS_CHROOT
+          resources:
+            limits:
+              cpu: "1"
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi
+          volumeMounts:
+            - name: nginx-ssl-certificate
+              mountPath: "/etc/nginx/ssl"
+            - name: nginx-config
+              mountPath: "/etc/nginx/nginx.conf"
+              subPath: nginx.conf
+            - name: nginx-config
+              mountPath: "/etc/nginx/templates/default.conf.template"
+              subPath: default.conf.template
+            - name: nginx-basic-auth
+              mountPath: "/etc/nginx/basic-auth/alertmanager"
+              subPath: alertmanager
+            - name: nginx-basic-auth
+              mountPath: "/etc/nginx/basic-auth/prometheus"
+              subPath: prometheus
+      imagePullSecrets:
+        - name: regcreds
+      volumes:
+        - name: git-repositories
+          persistentVolumeClaim:
+            claimName: git-repositories
+        - name: sshd-config
+          configMap:
+            name: sshd-config
+        - name: host-keys
+          secret:
+            secretName: host-keys
+        - name: nginx-ssl-certificate
+          secret:
+            secretName: nginx-ssl-certificate
+        - name: nginx-config
+          configMap:
+            name: nginx-config
+        - name: nginx-basic-auth
+          secret:
+            secretName: nginx-basic-auth
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: git-server
+spec:
+  selector:
+    app: simple-git-server
+  ports:
+    - name: ssh
+      port: 2222
+      protocol: TCP
+      appProtocol: ssh
+      targetPort: 22
+    - name: https
+      port: 443
+      protocol: TCP
+      targetPort: 443
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: forbid-pods-internet-access
+spec:
+  podSelector: {}
+  policyTypes:
+  - Egress
+  egress:
+  - to:
+    - ipBlock:
+        cidr: 10.0.0.0/8
+    - ipBlock:
+        cidr: 172.16.0.0/12
+    - ipBlock:
+        cidr: 192.168.0.0/16
