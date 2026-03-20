@@ -1,0 +1,3 @@
+servers = ["swpt-tests-ca:1234"]
+host = "/"
+destination = "/exchange/creditors_in"
