@@ -568,7 +568,7 @@ patches:
 
 resources:
 - ../../base/swpt-creditors/
-# - broker.yaml
+- broker.yaml
 - hydra-db/
 - login/
 - trade/
