@@ -126,7 +126,7 @@ secretGenerator:
     type: Opaque
 resources:
   - ../../../../../base/swpt-creditors/trade/worker/
-  - postgres-cluster.yaml
+  # - postgres-cluster.yaml
 patches:
   - path: ../../../../../base/swpt-creditors/trade/worker/patches/postgres-cluster.yaml
     target:
