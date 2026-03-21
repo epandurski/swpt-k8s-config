@@ -194,10 +194,10 @@ configMapGenerator:
   #
   - PUBLIC_HOSTNAME=swpt-tests-ca
 
-  # This must be a subdomain of the above configured PUBLIC_HOSTNAME.
-  # For example: if PUBLIC_HOSTNAME is set to "example.com", you may
-  # set "webapp.example.com" here. This must match the configuration
-  # of your DNS records.
+  # This must be a subdomain of the above configured PUBLIC_HOSTNAME
+  # (pointing to the same IP address). For example: if PUBLIC_HOSTNAME
+  # is set to "example.com", you may set "webapp.example.com" here.
+  # This must match the configuration of your DNS records.
   #
   - WEBAPP_HOSTNAME=webapp.swpt-tests-ca
 
