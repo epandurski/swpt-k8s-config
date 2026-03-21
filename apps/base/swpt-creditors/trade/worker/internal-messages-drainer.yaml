@@ -28,7 +28,7 @@ spec:
       imagePullSecrets:
         - name: regcreds
       containers:
-        - name: messages-drainer
+        - name: internal-messages-drainer
           image: swpt-trade
           args: ['consume_internal_messages', '--draining-mode']
           securityContext:
