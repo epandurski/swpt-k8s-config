@@ -193,7 +193,7 @@ secretGenerator:
   type: Opaque
   
 resources:
-- postgres-cluster.yaml
+# - postgres-cluster.yaml
 - internal-broker.yaml
 - workers/
 - ../../../base/swpt-creditors/trade/
