@@ -1,6 +1,3 @@
-# This file is currently owned by the worker-splitting job. DO NOT EDIT!
-# Date: Sun Mar 22 07:14:50 PM EET 2026
-#
 apiVersion: "acid.zalan.do/v1"
 kind: postgresql
 metadata:
