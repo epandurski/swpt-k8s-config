@@ -54,5 +54,3 @@ spec:
     db_owner: []
   databases:
     db: db_owner
-  standby:
-    s3_wal_path: s3://swpt/spilo/swpt-creditors-trade-worker-db/wal/17
