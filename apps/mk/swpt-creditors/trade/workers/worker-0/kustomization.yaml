@@ -5,7 +5,7 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 # This must be either an empty string, or a string starting with '-',
 # and followed by 0s or 1s. "-101" for example.
-nameSuffix: ""
+nameSuffix: "-0"
 labels:
   - includeSelectors: true
     pairs:
@@ -13,14 +13,14 @@ labels:
       # value. For example, if "nameSuffix" is "-101", the value for the
       # label must be "worker-101". If "nameSuffix" is "", the value for
       # the label must be "worker".
-      app.kubernetes.io/instance: worker
+      app.kubernetes.io/instance: worker-0
 configMapGenerator:
   - name: trade-workerconfig
     literals:
       # The routing key must correspond to the "nameSuffix" value. For
       # example, if "nameSuffix" is "-101", the routing key must be
       # "1.0.1.#". If "nameSuffix" is "", the routing key must be "#".
-      - PROTOCOL_BROKER_QUEUE_ROUTING_KEY=#
+      - PROTOCOL_BROKER_QUEUE_ROUTING_KEY=0.#
       # Worker configuration settings which you may want to change. In
       # general, you should increase those numbers as the load
       # increases.
@@ -83,41 +83,22 @@ configMapGenerator:
         # Do not change the next two lines!
         kustomize_zalando_top_level_domain: do
         kustomize_zalando_clone_timestamp: "2199-01-01T00:00:00.000+00:00"
-  - name: splitting-jobs-config
-    literals:
-      - SHARDS_APP=swpt-trade-worker
-      - SHARDS_CRITICAL_WORKLOADS=
-      - SHARDS_COMPONENTS=http-fetcher messages-consumer internal-messages-consumer messages-flusher transfers-triggerer turn-roller
-      - SHARDS_PREFIX=worker
-      - SHARDS_PG_CLUSTER_PREFIX=trade-worker-db
-      - SHARD_SUFFIX=
-      - SHARD0_SUFFIX=-0
-      - SHARD1_SUFFIX=-1
-      - SHARD_ROUTING_KEY=#
-      - SHARD0_ROUTING_KEY=0.#
-      - SHARD1_ROUTING_KEY=1.#
-      - APIPROXY_CONFIG=
-      - CONSUMER_TASK_NAME=trade-worker-messages-consumer
-      - DRAINER_TASK_NAME=trade-worker-messages-drainer
-      - INTERNAL_CONSUMER_TASK_NAME=trade-worker-internal-messages-consumer
-      - INTERNAL_DRAINER_TASK_NAME=trade-worker-internal-messages-drainer
-      - SHARDS_SUBDIR=apps/mk/swpt-creditors/trade/workers
 # The number of replicas for each component. One replica works fine,
 # but to have high-availability, should be at least 2. You should
 # increase those numbers as the load increases.
 replicas:
   - name: trade-worker-messages-flusher
-    count: 1
+    count: 0
   - name: trade-worker-messages-consumer
-    count: 1
+    count: 0
   - name: trade-worker-internal-messages-consumer
-    count: 1
+    count: 0
   - name: trade-worker-http-fetcher
-    count: 1
+    count: 0
   - name: trade-worker-transfers-triggerer
-    count: 1
+    count: 0
   - name: trade-worker-turn-roller
-    count: 1
+    count: 0
 secretGenerator:
   - name: postgres.cluster-name.credentials.postgresql.acid.zalan.do
     files:
@@ -158,7 +139,6 @@ secretGenerator:
 resources:
   - ../../../../../base/swpt-creditors/trade/worker/
   - postgres-cluster.yaml
-  - ../../../../../base/swpt-creditors/trade/worker/splitting-phase-1-job.yaml
 patches:
   - path: ../../../../../base/swpt-creditors/trade/worker/patches/postgres-cluster.yaml
     target:
