@@ -64,6 +64,8 @@ spec:
               value: "0"
             - name: HTTP_FETCH_PROCESSES
               value: "0"
+            - name: TRIGGER_TRANSFERS_PROCESSES
+              value: "0"
             - name: APP_LOG_LEVEL
               value: warning
             - name: APP_LOG_FORMAT
