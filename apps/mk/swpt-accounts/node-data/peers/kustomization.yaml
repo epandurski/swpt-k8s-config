@@ -4,3 +4,4 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - f981cf725f3c269d266fc1cd74dec84c/
+- b5e70fe3ff364122e1c197b79c5a5f06/
