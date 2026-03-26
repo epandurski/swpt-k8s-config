@@ -191,7 +191,6 @@ configMapGenerator:
   # The number of worker threads that STOMP servers will use for file
   # access to the NFS server. 10 seems like a reasonable value.
   - APP_FILE_READ_THREADS=10
-  - APP_LOG_LEVEL=info
 
   options:
     labels:
