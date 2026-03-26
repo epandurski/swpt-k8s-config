@@ -74,7 +74,7 @@ spec:
             - name: PROTOCOL_BROKER_URL
               value: "$(rmq_connection_string)"
             - name: APP_LOG_LEVEL
-              value: warning
+              value: info
             - name: APP_LOG_FORMAT
               value: json
           resources:
