@@ -59,7 +59,7 @@ spec:
             - name: FETCH_API_URL
               value: "http://apiproxy"
             - name: APP_LOG_LEVEL
-              value: debug
+              value: warning
             - name: APP_LOG_FORMAT
               value: json
       initContainers:
