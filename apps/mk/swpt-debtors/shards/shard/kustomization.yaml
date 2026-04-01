@@ -21,12 +21,12 @@ configMapGenerator:
       # Shard configuration settings which you may want to change. In
       # general, you should increase those numbers as the load
       # increases.
-      - PROTOCOL_BROKER_PROCESSES=1
-      - PROTOCOL_BROKER_THREADS=1
+      - PROTOCOL_BROKER_PROCESSES=2
+      - PROTOCOL_BROKER_THREADS=10
       - PROTOCOL_BROKER_PREFETCH_COUNT=10
-      - WEBSERVER_PROCESSES=1
+      - WEBSERVER_PROCESSES=2
       - WEBSERVER_THREADS=3
-      - FLUSH_PROCESSES=1
+      - FLUSH_PROCESSES=2
       - FLUSH_PERIOD=1.5
     options:
       annotations:
