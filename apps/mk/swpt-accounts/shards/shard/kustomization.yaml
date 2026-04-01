@@ -21,19 +21,19 @@ configMapGenerator:
       # Shard configuration settings which you may want to change. In
       # general, you should increase those numbers as the load
       # increases.
-      - PROTOCOL_BROKER_PROCESSES=1
-      - PROTOCOL_BROKER_THREADS=1
+      - PROTOCOL_BROKER_PROCESSES=2
+      - PROTOCOL_BROKER_THREADS=10
       - PROTOCOL_BROKER_PREFETCH_COUNT=10
-      - CHORES_BROKER_PROCESSES=1
-      - CHORES_BROKER_THREADS=1
+      - CHORES_BROKER_PROCESSES=2
+      - CHORES_BROKER_THREADS=10
       - CHORES_BROKER_PREFETCH_COUNT=10
-      - WEBSERVER_PROCESSES=1
+      - WEBSERVER_PROCESSES=2
       - WEBSERVER_THREADS=3
-      - FLUSH_PROCESSES=1
+      - FLUSH_PROCESSES=2
       - FLUSH_PERIOD=1.5
-      - PROCESS_TRANSFER_REQUESTS_THREADS=1
-      - PROCESS_FINALIZATION_REQUESTS_THREADS=1
-      - PROCESS_BALANCE_CHANGES_THREADS=1
+      - PROCESS_TRANSFER_REQUESTS_THREADS=5
+      - PROCESS_FINALIZATION_REQUESTS_THREADS=5
+      - PROCESS_BALANCE_CHANGES_THREADS=5
       # The `REMOVE_FROM_ARCHIVE_THRESHOLD_DATE` setting determines
       # the date before which transfer IDs are safe to remove from the
       # archive (default 1970-01-01). Normally, this should be a date
