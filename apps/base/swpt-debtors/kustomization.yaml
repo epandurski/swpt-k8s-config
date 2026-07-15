@@ -26,3 +26,4 @@ resources:
 - acme-cert-issuer.yaml
 - spilo-pod-monitor.yaml
 - shard-splitter-service-account.yaml
+- web-ui/
