@@ -7,5 +7,6 @@ labels:
       app.kubernetes.io/component: swpt-debtors-ui
 
 resources:
+- ../../../base/swpt-debtors/web-ui/
 - en/
 - bg/

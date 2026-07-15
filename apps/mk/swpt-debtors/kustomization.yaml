@@ -534,7 +534,7 @@ resources:
 - hydra-db/
 - login/
 - shards/
-- swpt-debtors-ui/
+- web-ui/
 - node-data/peers/
 
 replacements:
