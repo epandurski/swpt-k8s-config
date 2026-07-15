@@ -239,27 +239,6 @@ configMapGenerator:
       kustomize_swpt_debtors_ui_memory_request: 12Mi
       kustomize_swpt_debtors_ui_memory_limit: 1Gi
 
-- name: swpt-debtors-ui-config
-  literals:
-  # Set this to the name of the site, as it is known to the users. It
-  # should be short, and start with a captital letter.
-  - SITE_TITLE=Swaptacular
-
-  # When the currency issuer wants to peg its currency to another
-  # currency, a default peg currency will be suggested. Its
-  # abbreviation will be the value of "DEFAULT_PEG_ABBR", and its
-  # digital coin will be the value of "DEFAULT_PEG_COIN" (that is,
-  # the textual content of the digital coin's QR code). When one of
-  # those variables are set to an empty string, no default peg
-  # currency will be suggested to the user.
-  #
-  - DEFAULT_PEG_ABBR=USD
-  - DEFAULT_PEG_COIN=https://debtors.swaptacular.org/840#swpt:840
-
-  options:
-    labels:
-      app.kubernetes.io/name: swpt-debtors
-
 - name: swpt-hydra
   files:
   # The configuration file for Ory-Hydra. Can reference a custom
@@ -410,8 +389,6 @@ replicas:
   count: 1
 - name: swagger-ui
   count: 1
-- name: swpt-debtors-ui
-  count: 1
 
 # OCI images to use for the different containers. Note that the digest
 # for the "swpt-debtors-swagger-ui" image must be referring to the
@@ -424,9 +401,6 @@ images:
 - name: swpt-debtors-swagger-ui
   newName: ghcr.io/swaptacular/swpt_debtors_swagger_ui
   digest: sha256:0b6504482f3ff3aaf9f41d2f84baa3b1683abcdeb4eea0ca061c97fa7f478dc7
-- name: swpt-debtors-ui
-  newName: ghcr.io/swaptacular/swpt_debtors_ui
-  digest: sha256:c05575c32e371a0a835a1926dfe42ed4c35e894d68b5cd084e8f5ecfd87712b9
 - name: swpt-apiproxy
   newName: ghcr.io/swaptacular/swpt_apiproxy
   digest: sha256:7a396d200c4c023f5cf46a3dc45d202917df4ef184e33580c3177a70c4a3675b
@@ -560,6 +534,7 @@ resources:
 - hydra-db/
 - login/
 - shards/
+- swpt-debtors-ui/
 - node-data/peers/
 
 replacements:
