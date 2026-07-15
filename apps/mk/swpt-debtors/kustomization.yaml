@@ -530,6 +530,7 @@ patches:
 
 resources:
 - ../../base/swpt-debtors/
+- ../../base/swpt-debtors/web-ui/swagger-ui.yaml
 - broker.yaml
 - hydra-db/
 - login/
