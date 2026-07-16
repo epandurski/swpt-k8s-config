@@ -263,22 +263,6 @@ configMapGenerator:
       kustomize_swpt_creditors_ui_memory_request: 12Mi
       kustomize_swpt_creditors_ui_memory_limit: 1Gi
 
-- name: swpt-creditors-ui-config
-  literals:
-  # Set this to the name of the site, as it is known to the users. It
-  # should be short, and start with a captital letter.
-  - SITE_TITLE=Swaptacular
-
-  # Configuration for "swpt-creditors-ui". Normally, you do not need
-  # to change those.
-  - SERVER_API_TIMEOUT=8000
-  - TRANSFER_DELETION_DELAY_SECONDS=1296000
-  - DEBTOR_INFOS_REVISION_DAYS=7
-
-  options:
-    labels:
-      app.kubernetes.io/name: swpt-creditors
-
 - name: swpt-hydra
   files:
   # The configuration file for Ory-Hydra. Can reference a custom
@@ -429,8 +413,6 @@ replicas:
   count: 1
 - name: swagger-ui
   count: 1
-- name: swpt-creditors-ui
-  count: 1
 
 # OCI images to use for the different containers. Note that the digest
 # for the "swpt-creditors-swagger-ui" image must be referring to the
@@ -443,9 +425,6 @@ images:
 - name: swpt-creditors-swagger-ui
   newName: ghcr.io/swaptacular/swpt_creditors_swagger_ui
   digest: sha256:6ec3ac9d4303703cd09487599744caa4ae108b65f3d973cdff44daec37043c48
-- name: swpt-creditors-ui
-  newName: ghcr.io/swaptacular/swpt_creditors_ui
-  digest: sha256:fb6c6fef9e156dc869ea87a03a0ed10dc1ec109b44d440c52647c7c008442469
 - name: swpt-apiproxy
   newName: ghcr.io/swaptacular/swpt_apiproxy
   digest: sha256:7a396d200c4c023f5cf46a3dc45d202917df4ef184e33580c3177a70c4a3675b
@@ -575,11 +554,13 @@ patches:
 
 resources:
 - ../../base/swpt-creditors/
+- ../../base/swpt-creditors/web-ui/swagger-ui.yaml
 - broker.yaml
 - hydra-db/
 - login/
 - trade/
 - shards/
+- web-ui/
 - node-data/peers/
 
 replacements:
