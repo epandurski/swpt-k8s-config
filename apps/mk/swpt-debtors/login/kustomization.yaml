@@ -153,8 +153,8 @@ images:
   newName: ghcr.io/swaptacular/swpt_login
   digest: sha256:477e9d2d24781d1af1dbd562f7ac4b480d74b16cb1ca36906b875844d374adb7
 - name: smtp-smarthost
-  newName: ghcr.io/swaptacular/docker_postfix
-  digest: epandurski/docker_postfix:0.1.0
+  newName: epandurski/docker_postfix
+  newTag: 0.1.0
 
 secretGenerator:
 - name: swpt-login-captcha-keys
