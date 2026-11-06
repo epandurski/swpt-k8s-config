@@ -45,7 +45,7 @@ spec:
               - SYS_CHROOT
           readinessProbe:
             tcpSocket:
-              port: stomp
+              port: smtp
             initialDelaySeconds: 5
           envFrom:
             - secretRef:
