@@ -57,8 +57,8 @@ configMapGenerator:
   # beginning, and MAIL_USE_TLS determines whether the STARTTLS
   # extension should be used after the connection to the mail server
   # has bee established.
-  - MAIL_SERVER=mailhog.mailhog.svc.cluster.local
-  - MAIL_PORT=1025
+  - MAIL_SERVER=login-smtp-smarthost
+  - MAIL_PORT=25
   - MAIL_DEFAULT_SENDER=Demo Debtors Agent <no-reply@example.com>
   - MAIL_USERNAME=
   - MAIL_PASSWORD=
@@ -143,6 +143,8 @@ configMapGenerator:
 replicas:
 - name: login-web-server
   count: 1
+- name: login-smtp-smarthost
+  count: 1
 
 # OCI images to use for the different containers:
 #
@@ -150,6 +152,9 @@ images:
 - name: swpt-login
   newName: ghcr.io/swaptacular/swpt_login
   digest: sha256:477e9d2d24781d1af1dbd562f7ac4b480d74b16cb1ca36906b875844d374adb7
+- name: smtp-smarthost
+  newName: ghcr.io/swaptacular/docker_postfix
+  digest: sha256:0d70a6b1eb0e375cc2fcfd7f4d7a02203a84f90f3e677adb0311f9be2dbe2acd
 
 secretGenerator:
 - name: swpt-login-captcha-keys
@@ -182,6 +187,41 @@ secretGenerator:
     labels:
       app.kubernetes.io/name: swpt-login
   type: Opaque
+
+- name: swpt-login-smtp-smarthost
+
+  # Parameters for the SMTP smart host. It is used to buffer queue
+  # emails before sending them to the recipient's SMTP server.
+
+  literals:
+  # Server address of the SMTP server to use.
+  #
+  - SMTP_SERVER=mailhog.mailhog.svc.cluster.local
+
+  # Port of the SMTP server to use.
+  #
+  - SMTP_PORT=1025
+
+  # The username to authenticate with. Leave it empty if the SMTP
+  # server requires no authentication.
+  #
+  - SMTP_USERNAME=
+
+  # Server hostname for the smart host container. Emails will appear
+  # to come from the hostname's domain.
+  #
+  - SERVER_HOSTNAME=mail.swaptacular.org
+
+  files:
+  # A SOPS-encrypted file containing the SMTP authentication password.
+  # To SOPS-encrypt the password, you may use these commands:
+  #
+  # $ echo -n 'YOUR_SMTP_PASSWORD' > login-smtp-password
+  # $ sops encrypt login-smtp-password > login-smtp-password.encrypted
+  # $ shred -z login-smtp-password
+  # $ rm login-smtp-password
+  #
+  - SMTP_PASSWORD=../secrets/login-smtp-password.encrypted
 
 - name: postgres.login-db.credentials.postgresql.acid.zalan.do
   files:
