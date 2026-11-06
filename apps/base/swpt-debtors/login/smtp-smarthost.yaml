@@ -39,7 +39,10 @@ spec:
             allowPrivilegeEscalation: false
             capabilities:
               drop:
-              - ALL
+              - DAC_OVERRIDE
+              - NET_RAW
+              - MKNOD
+              - SYS_CHROOT
           readinessProbe:
             tcpSocket:
               port: stomp
