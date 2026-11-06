@@ -52,7 +52,7 @@ spec:
                 name: swpt-login-smtp-smarthost
           volumeMounts:
             - name: data
-              mountPath: /var/spool/postfix
+              mountPath: /xyzzz #/var/spool/postfix
   volumeClaimTemplates:
   - metadata:
       name: data
