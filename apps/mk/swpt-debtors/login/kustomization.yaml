@@ -205,7 +205,7 @@ secretGenerator:
   # The username to authenticate with. Leave it empty if the SMTP
   # server requires no authentication.
   #
-  - SMTP_USERNAME=
+  - SMTP_USERNAME=dummy
 
   # Server hostname for the smart host container. Emails will appear
   # to come from the hostname's domain.
