@@ -207,21 +207,23 @@ secretGenerator:
   #
   - SMTP_USERNAME=dummy
 
+  - SMTP_PASSWORD=dummy
+
   # Server hostname for the smart host container. Emails will appear
   # to come from the hostname's domain.
   #
   - SERVER_HOSTNAME=mail.swaptacular.org
 
-  files:
-  # A SOPS-encrypted file containing the SMTP authentication password.
-  # To SOPS-encrypt the password, you may use these commands:
-  #
-  # $ echo -n 'YOUR_SMTP_PASSWORD' > login-smtp-password
-  # $ sops encrypt login-smtp-password > login-smtp-password.encrypted
-  # $ shred -z login-smtp-password
-  # $ rm login-smtp-password
-  #
-  - SMTP_PASSWORD=../secrets/login-smtp-password.encrypted
+  # files:
+  # # A SOPS-encrypted file containing the SMTP authentication password.
+  # # To SOPS-encrypt the password, you may use these commands:
+  # #
+  # # $ echo -n 'YOUR_SMTP_PASSWORD' > login-smtp-password
+  # # $ sops encrypt login-smtp-password > login-smtp-password.encrypted
+  # # $ shred -z login-smtp-password
+  # # $ rm login-smtp-password
+  # #
+  # - SMTP_PASSWORD=../secrets/login-smtp-password.encrypted
 
 - name: postgres.login-db.credentials.postgresql.acid.zalan.do
   files:
