@@ -153,8 +153,8 @@ images:
   newName: ghcr.io/swaptacular/swpt_login
   digest: sha256:477e9d2d24781d1af1dbd562f7ac4b480d74b16cb1ca36906b875844d374adb7
 - name: smtp-smarthost
-  newName: epandurski/docker_postfix
-  newTag: 0.1.0
+  newName: boky/postfix
+  newTag: 5.2.1-alpine
 
 secretGenerator:
 - name: swpt-login-captcha-keys
@@ -196,23 +196,23 @@ secretGenerator:
   literals:
   # Server address of the SMTP server to use.
   #
-  - SMTP_SERVER=mailhog.mailhog.svc.cluster.local
+  - RELAYHOST=mailhog.mailhog.svc.cluster.local:1025
 
-  # Port of the SMTP server to use.
-  #
-  - SMTP_PORT=1025
+  # # Port of the SMTP server to use.
+  # #
+  # - SMTP_PORT=1025
 
-  # The username to authenticate with. Leave it empty if the SMTP
-  # server requires no authentication.
-  #
-  - SMTP_USERNAME=dummy
+  # # The username to authenticate with. Leave it empty if the SMTP
+  # # server requires no authentication.
+  # #
+  # - SMTP_USERNAME=dummy
 
-  - SMTP_PASSWORD=dummy
+  # - SMTP_PASSWORD=dummy
 
   # Server hostname for the smart host container. Emails will appear
   # to come from the hostname's domain.
   #
-  - SERVER_HOSTNAME=mail.swaptacular.org
+  - ALLOWED_SENDER_DOMAINS=swaptacular.org
 
   # files:
   # # A SOPS-encrypted file containing the SMTP authentication password.
